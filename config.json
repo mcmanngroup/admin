@@ -15,5 +15,18 @@
       "client": "Heather and Jesee Dorman",
       "mondayBoardId": "18416985380"
     }
-  ]
+  ],
+  "clientInfo": {
+    "dorman": {
+      "clientName": "Heather and Jesee Dorman",
+      "clientEmail": "",
+      "clientPhone": "",
+      "projectName": "2565 East Wellington Road",
+      "projectAddress": "",
+      "projectManager": "A. McMann",
+      "dateFrom": "2026-01-01",
+      "dateTo": "2026-05-31",
+      "reportLabel": "January 1, 2026 – May 31, 2026"
+    }
+  }
 }
