@@ -1,0 +1,19 @@
+{
+  "jobs": [
+    {
+      "id": "widgeon",
+      "name": "2125 Widgeon Rd",
+      "repo": "mcmann-widgeon",
+      "url": "mmg-widgeon.mcmanngroup.com",
+      "client": "Mike and Stacey Bailey"
+    },
+    {
+      "id": "dorman",
+      "name": "Dorman",
+      "repo": "Dorman",
+      "url": "",
+      "client": "Heather and Jesee Dorman",
+      "mondayBoardId": "18416985380"
+    }
+  ]
+}
