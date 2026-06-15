@@ -632,10 +632,10 @@ function handleUpload(e){
   var reader=new FileReader();
   reader.onload=function(ev){
     try{
-      var wb=XLSX.read(ev.target.result,{type:'binary'});
+      var wb=XLSX.read(ev.target.result,{type:'binary',cellFormula:false,cellNF:false,raw:true});
       var data={filename:file.name,uploadedAt:new Date().toLocaleString()};
       ['Cost Breakdown','Timesheet','Material'].forEach(function(s){
-        if(wb.SheetNames.indexOf(s)>-1)data[s]=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,defval:''});
+        if(wb.SheetNames.indexOf(s)>-1)data[s]=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,defval:'',raw:true});
       });
       var key=detectMonth(file.name);
       reports[key]=data;save();renderMonthList();selectMonth(key);showToast('Saved: '+key);
@@ -756,7 +756,7 @@ function renderCosts(data){
   var rows=data['Cost Breakdown'];
 
   var sections=[],totalsRows=[],cur=null;
-rows.slice(2).forEach(function(r){
+rows.filter(function(r){var l=(r[0]||'').toString().trim();return l!=='LINE ITEM'&&l!=='';}).forEach(function(r){
     var label=(r[0]||'').toString().trim();
     if(!label)return;
     var b=fmtN(r[1]),prev=fmtN(r[2]),cur2=fmtN(r[3]),inv=fmtN(r[4]),tbc=fmtN(r[5]),over=fmtN(r[6]),co=fmtN(r[7]);
