@@ -601,11 +601,11 @@ var _MOS=['January','February','March','April','May','June','July','August','Sep
 
 function togglePw(){var i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';}
 function getAdminPass(){return localStorage.getItem('mm_admin_pass')||'admin';}
-function doLogin(){
+async function doLogin(){
   if(document.getElementById('pw').value===getAdminPass()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='flex';
-    loadFromStorage();renderMonthList();if(activeMonth)updateBar();initJobs();
+    showToast("Loading data...");await initJobs();await loadFromStorage();renderMonthList();if(activeMonth)updateBar();
   } else {
     var e=document.getElementById('login-err');e.classList.remove('show');void e.offsetWidth;e.classList.add('show');
   }
@@ -619,14 +619,73 @@ function exitAdmin(){
 
 (function tick(){var n=new Date(),t=n.toTimeString().slice(0,8);document.getElementById('login-clock').textContent=t;setTimeout(tick,1000);})();
 
-function save(){
-  if(!activeJobId)return;
-  try{localStorage.setItem('mcmann_r8_'+activeJobId,JSON.stringify(reports));localStorage.setItem('mcmann_m8',JSON.stringify(mondayConfig));}catch(e){}
+// ── GitHub-backed persistence ──────────────────────────────────────────────
+// All data lives in the admin repo under:
+//   data/<jobId>/reports.json   ← Excel report data
+//   data/jobs.json              ← job list
+//   data/config.json            ← monday config per job
+// localStorage is only used to cache the GitHub token (never leaves the browser).
+
+function getGhCfg(){
+  try{return JSON.parse(localStorage.getItem('mm_gh')||'{}')}catch(e){return{}}
 }
-function loadFromStorage(){
+function saveGhCfgLocal(g){localStorage.setItem('mm_gh',JSON.stringify(g));}
+
+var GH_ADMIN_REPO='admin'; // the repo this file lives in
+var GH_ADMIN_USER='mcmanngroup';
+
+async function ghGet(path){
+  var gh=getGhCfg();
+  if(!gh.token)return null;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var r=await fetch(url,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+  if(!r.ok)return null;
+  var j=await r.json();
+  try{return{data:JSON.parse(atob(j.content.replace(/\n/g,''))),sha:j.sha};}catch(e){return null;}
+}
+
+async function ghPut(path,data,sha){
+  var gh=getGhCfg();
+  if(!gh.token)return false;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var body={message:'Admin save: '+path,content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))))};
+  if(sha)body.sha=sha;
+  var r=await fetch(url,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.ok;
+}
+
+var _reportSha={};
+var _jobsSha=null;
+var _cfgSha=null;
+
+async function save(){
+  if(!activeJobId)return;
+  var path='data/'+activeJobId+'/reports.json';
+  var ok=await ghPut(path,reports,_reportSha[activeJobId]||null);
+  if(ok){
+    // refresh sha for next save
+    var got=await ghGet(path);
+    if(got)_reportSha[activeJobId]=got.sha;
+  }
+  // also save monday config
+  var cfgPath='data/config.json';
+  var cfgOk=await ghPut(cfgPath,mondayConfig,_cfgSha||null);
+  if(cfgOk){var gc=await ghGet(cfgPath);if(gc)_cfgSha=gc.sha;}
+}
+
+async function loadFromStorage(){
   var jid=activeJobId||'widgeon';
-  try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d)reports=JSON.parse(d);else reports={};}catch(e){reports={};}
-  try{var m=localStorage.getItem('mcmann_m8');if(m)mondayConfig=JSON.parse(m);}catch(e){mondayConfig={};}
+  var gh=getGhCfg();
+  if(!gh.token){
+    // fallback to localStorage if no token configured yet
+    try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d)reports=JSON.parse(d);else reports={};}catch(e){reports={};}
+    try{var m=localStorage.getItem('mcmann_m8');if(m)mondayConfig=JSON.parse(m);}catch(e){mondayConfig={};}
+    return;
+  }
+  var rpt=await ghGet('data/'+jid+'/reports.json');
+  if(rpt){reports=rpt.data;_reportSha[jid]=rpt.sha;}else{reports={};}
+  var cfg=await ghGet('data/config.json');
+  if(cfg){mondayConfig=cfg.data;_cfgSha=cfg.sha;}else{mondayConfig={};}
 }
 
 function handleUpload(e){
@@ -1276,7 +1335,7 @@ async function connectMondayCalendar(){
     var board=json.data&&json.data.boards&&json.data.boards[0];
 mondayItems=processMondayItems((board&&board.items_page&&board.items_page.items)||[]);
     _calItems=mondayItems;
-    localStorage.setItem('mm_monday_items_'+activeJobId,JSON.stringify(mondayItems));
+    if(!reports['_mondayItems'])reports['_mondayItems']={}; reports['_mondayItems'][activeJobId]=mondayItems; save();
     document.getElementById('cal-status').textContent='● Connected · '+mondayItems.length+' items';
     renderCalendar();showToast('Calendar loaded');
   }catch(e){showToast('Connection failed',true);}
@@ -1353,7 +1412,7 @@ async function connectMonday(){
     if(!board){showToast('Board not found',true);return;}
 mondayItems=processMondayItems((board.items_page&&board.items_page.items)||[]);
     _calItems=mondayItems;
-    localStorage.setItem('mm_monday_items_'+activeJobId,JSON.stringify(mondayItems));
+    if(!reports['_mondayItems'])reports['_mondayItems']={}; reports['_mondayItems'][activeJobId]=mondayItems; save();
     document.getElementById('monday-status').textContent='● Connected · '+mondayItems.length+' items · '+new Date().toLocaleTimeString();
     buildGantt(mondayItems,board.name);
     showToast('Synced: '+mondayItems.length+' items');
@@ -1474,23 +1533,31 @@ function startRename(sid,oldKey){
   inp.addEventListener('blur',function(){setTimeout(commit,100);});
 }
 
-function getJobs(){try{return JSON.parse(localStorage.getItem('mm_jobs')||'[]')}catch(e){return[]}}
-function saveJobs(j){localStorage.setItem('mm_jobs',JSON.stringify(j))}
-function getGhCfg(){try{return JSON.parse(localStorage.getItem('mm_gh')||'{}')}catch(e){return{}}}
-function saveGhCfg(g){localStorage.setItem('mm_gh',JSON.stringify(g))}
+var _jobsCache=null;
+function getJobs(){return _jobsCache||[];}
+async function saveJobs(j){
+  _jobsCache=j;
+  var ok=await ghPut('data/jobs.json',j,_jobsSha||null);
+  if(ok){var got=await ghGet('data/jobs.json');if(got)_jobsSha=got.sha;}
+}
+function saveGhCfg(g){saveGhCfgLocal(g);}
 
-function initJobs(){
+async function initJobs(){
+  var gh=getGhCfg();
+  if(gh.token){
+    var got=await ghGet("data/jobs.json");
+    if(got){_jobsCache=got.data;_jobsSha=got.sha;}
+  }
   var jobs=getJobs();
   if(!jobs.length){
-    jobs=[{id:'widgeon',name:'2125 Widgeon Rd',repo:'mcmann-widgeon',url:'mmg-widgeon.mcmanngroup.com',client:'Mike and Stacey Bailey'}];
-    saveJobs(jobs);
+    jobs=[{id:"widgeon",name:"2125 Widgeon Rd",repo:"mcmann-widgeon",url:"mmg-widgeon.mcmanngroup.com",client:"Mike and Stacey Bailey"}];
+    await saveJobs(jobs);
   }
   populateJobSel(jobs);
-  var sel=document.getElementById('job-select');
-  if(sel&&sel.value)switchJob(sel.value,true);
-  var gh=getGhCfg();
-  if(gh.token)document.getElementById('gh-token').value=gh.token;
-  if(gh.user)document.getElementById('gh-user').value=gh.user;
+  var sel=document.getElementById("job-select");
+  if(sel&&sel.value)await switchJob(sel.value,true);
+  if(gh.token)document.getElementById("gh-token").value=gh.token;
+  if(gh.user)document.getElementById("gh-user").value=gh.user;
   updateSyncBar();
 }
 
@@ -1501,18 +1568,17 @@ function populateJobSel(jobs){
   if(prev&&jobs.find(function(j){return j.id===prev}))sel.value=prev;
 }
 
-function switchJob(jobId,skipRender){
+async function switchJob(jobId,skipRender){
   var jobs=getJobs();
   var job=jobs.find(function(j){return j.id===jobId})||jobs[0];
   if(!job)return;
   activeJobId=jobId;
   activeJob=job;
-  loadFromStorage();
+  await loadFromStorage();
   document.getElementById('sync-job-nm').textContent=job.name+' → '+job.repo;
   if(document.getElementById('rb-badge'))document.getElementById('rb-badge').textContent='✓ '+job.name;
 activeMonth=null;
-  var storedItems=localStorage.getItem('mm_monday_items_'+jobId);
-  mondayItems=storedItems?JSON.parse(storedItems):[];
+  mondayItems=(reports["_mondayItems"]&&reports["_mondayItems"][jobId])||[];
   _calItems=mondayItems;
   renderMonthList();
   if(!skipRender)showEmpty();
@@ -1587,8 +1653,7 @@ function updateSyncBar(){
 
 function getClientInfo(){
   try{
-    var stored=localStorage.getItem('mm_clientinfo_'+(activeJobId||'widgeon'));
-    if(stored)return JSON.parse(stored);
+    if(reports['_clientInfo']&&reports['_clientInfo'][activeJobId||'widgeon'])return reports['_clientInfo'][activeJobId||'widgeon'];
   }catch(e){}
   return{
     clientName:activeJob?activeJob.client||'':'',
@@ -1599,7 +1664,9 @@ function getClientInfo(){
   };
 }
 function saveClientInfoToStorage(obj){
-  try{localStorage.setItem('mm_clientinfo_'+(activeJobId||'widgeon'),JSON.stringify(obj));}catch(e){}
+  if(!reports['_clientInfo'])reports['_clientInfo']={};
+  reports['_clientInfo'][activeJobId||'widgeon']=obj;
+  save();
 }
 
 function renderClientInfo(){
