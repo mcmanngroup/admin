@@ -32,8 +32,8 @@
   },
   "monday": {
     "dorman": {
-      "apiKey": "",
-      "boardId": ""
+      "apiKey": "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MTc3MTU0NywiYWFpIjoxMSwidWlkIjo0NTY3NjE4MSwiaWFkIjoiMjAyNi0wNS0yMlQwNDozNjowNS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTc4MDg5NzUsInJnbiI6InVzZTEifQ.w69Humdr2FJcdm_zqAfZSAl_y4B-8qa4ot2_q-Nw9Gw",
+      "boardId": "18416985380"
     },
     "widgeon": {
       "apiKey": "",
