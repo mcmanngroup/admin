@@ -617,15 +617,144 @@ function exitAdmin(){
 
 (function tick(){var n=new Date(),t=n.toTimeString().slice(0,8);document.getElementById('login-clock').textContent=t;setTimeout(tick,1000);})();
 
+// ── GITHUB REPORTS STORAGE ───────────────────────────────────────────────────
+var _reportShas={};
+
+// ── MONDAY.COM GITHUB STORAGE ────────────────────────────────────────────────
+async function saveMondayToGitHub(jobId,apiKey,items){
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return false;
+  var path='monday/'+(jobId||'widgeon')+'/data.json';
+  var payload={apiKey:apiKey,boardId:(activeJob&&activeJob.mondayBoardId)||'',items:items,savedAt:new Date().toISOString()};
+  try{
+    var sha=null;
+    try{var chk=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});if(chk.ok){var cj=await chk.json();sha=cj.sha;}}catch(e){}
+    var body={message:'Monday data: '+(jobId||'widgeon'),content:btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))))};
+    if(sha)body.sha=sha;
+    var res=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    return res.ok;
+  }catch(e){return false;}
+}
+
+async function loadMondayFromGitHub(jobId){
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return null;
+  var path='monday/'+(jobId||'widgeon')+'/data.json';
+  try{
+    var res=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+    if(!res.ok)return null;
+    var j=await res.json();
+    var data=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+    return data;
+  }catch(e){return null;}
+}
+// ── END MONDAY.COM GITHUB STORAGE ────────────────────────────────────────────
+
+
+function reportPath(jobId,key){
+  var safe=key.replace(/[^a-zA-Z0-9_\-]/g,'_');
+  return 'reports/'+(jobId||'widgeon')+'/'+safe+'.json';
+}
+
+async function saveReportToGitHub(key,data){
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return false;
+  var path=reportPath(activeJobId,key);
+  try{
+    var body={message:'Report: '+key+' ('+activeJobId+')',content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))))};
+    var sha=_reportShas[path];
+    if(!sha){try{var chk=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});if(chk.ok){var cj=await chk.json();sha=cj.sha;_reportShas[path]=sha;}}catch(e){}}
+    if(sha)body.sha=sha;
+    var res=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok)return false;
+    var rj=await res.json();
+    if(rj.content&&rj.content.sha)_reportShas[path]=rj.content.sha;
+    return true;
+  }catch(e){return false;}
+}
+
+async function deleteReportFromGitHub(key){
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return;
+  var path=reportPath(activeJobId,key);
+  try{
+    var chk=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+    if(!chk.ok)return;
+    var cj=await chk.json();
+    await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+path,{method:'DELETE',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:'Delete: '+key,sha:cj.sha})});
+  }catch(e){}
+}
+
+async function loadReportsFromGitHub(jobId){
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return false;
+  var folder='reports/'+(jobId||'widgeon');
+  try{
+    var res=await fetch('https://api.github.com/repos/'+gh.user+'/admin/contents/'+folder,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+    if(!res.ok)return false;
+    var files=await res.json();
+    if(!Array.isArray(files)||!files.length)return false;
+    var loaded={};
+    await Promise.all(files.filter(function(f){return f.name.endsWith('.json');}).map(async function(f){
+      try{
+        var fr=await fetch(f.download_url);
+        if(!fr.ok)return;
+        var d=await fr.json();
+        var key=f.name.replace('.json','').replace(/_/g,' ');
+        loaded[key]=d;
+        _reportShas[f.path]=f.sha;
+      }catch(e){}
+    }));
+    if(Object.keys(loaded).length){
+      reports=loaded;
+      try{localStorage.setItem('mcmann_r8_'+jobId,JSON.stringify(reports));}catch(e){}
+      return true;
+    }
+    return false;
+  }catch(e){return false;}
+}
+
 function save(){
   if(!activeJobId)return;
-  try{localStorage.setItem('mcmann_r8_'+activeJobId,JSON.stringify(reports));localStorage.setItem('mcmann_m8',JSON.stringify(mondayConfig));}catch(e){}
+  try{localStorage.setItem('mcmann_r8_'+activeJobId,JSON.stringify(reports));localStorage.setItem('mcmann_m8',JSON.stringify(mondayConfig));
+    // Also save apiKey to GitHub config
+    var cfg=_configCache||{};
+    if(!cfg.monday)cfg.monday={};
+    cfg.monday[activeJobId||'widgeon']={apiKey:mondayConfig.apiKey||'',boardId:mondayConfig.boardId||''};
+    saveConfigToGitHub(cfg);
+  }catch(e){}
 }
+
+function saveAsync(key,data){
+  save();
+  var gh=getGhCfg();
+  if(gh.token&&gh.user){
+    saveReportToGitHub(key,data).then(function(ok){
+      if(ok)showToast('Report saved to GitHub ✓');
+      else showToast('Saved locally (GitHub unavailable)',true);
+    });
+  }
+}
+
 function loadFromStorage(){
   var jid=activeJobId||'widgeon';
   try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d)reports=JSON.parse(d);else reports={};}catch(e){reports={};}
   try{var m=localStorage.getItem('mcmann_m8');if(m)mondayConfig=JSON.parse(m);}catch(e){mondayConfig={};}
 }
+
+async function loadFromStorageOrGitHub(jobId){
+  var jid=jobId||'widgeon';
+  try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d&&Object.keys(JSON.parse(d)).length){reports=JSON.parse(d);return;}}catch(e){}
+  reports={};
+  var gh=getGhCfg();
+  if(!gh.token||!gh.user)return;
+  var sbar=document.getElementById('config-load-status');
+  if(sbar){sbar.style.display='block';sbar.textContent='Loading reports from GitHub...';}
+  var ok=await loadReportsFromGitHub(jid);
+  if(sbar){sbar.textContent=ok?'Reports loaded from GitHub':'No saved reports found';setTimeout(function(){sbar.style.display='none';},2500);}
+  if(ok){renderMonthList();}
+}
+// ── END GITHUB REPORTS STORAGE ───────────────────────────────────────────────
 
 function handleUpload(e){
   var file=e.target.files[0];if(!file)return;
@@ -638,7 +767,7 @@ function handleUpload(e){
         if(wb.SheetNames.indexOf(s)>-1)data[s]=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,defval:'',raw:true});
       });
       var key=detectMonth(file.name);
-      reports[key]=data;save();renderMonthList();selectMonth(key);showToast('Saved: '+key);
+      reports[key]=data;saveAsync(key,data);renderMonthList();selectMonth(key);showToast('Uploading to GitHub...');
     }catch(err){showToast('Error: '+err.message,true);}
   };
   reader.readAsBinaryString(file);e.target.value='';
@@ -676,7 +805,7 @@ function delClick(e,el){e.stopPropagation();openDeleteModal(el.getAttribute('dat
 function selectMonth(k){activeMonth=k;renderMonthList();updateBar();renderContent();}
 function openDeleteModal(k){deleteTarget=k;document.getElementById('modal-sub').textContent='Delete "'+k+'"? This cannot be undone.';document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');deleteTarget=null;}
-function confirmDelete(){if(!deleteTarget)return;delete reports[deleteTarget];save();if(activeMonth===deleteTarget){activeMonth=null;showEmpty();}showToast('Deleted',true);deleteTarget=null;closeModal();renderMonthList();}
+function confirmDelete(){if(!deleteTarget)return;var k=deleteTarget;delete reports[k];save();deleteReportFromGitHub(k);if(activeMonth===k){activeMonth=null;showEmpty();}showToast('Deleted',true);deleteTarget=null;closeModal();renderMonthList();}
 function showEmpty(){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Select a month from the sidebar.</div></div>';}
 
 function switchTab(tab,el){activeTab=tab;document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');renderContent();}
@@ -1126,6 +1255,7 @@ mondayItems=processMondayItems((board&&board.items_page&&board.items_page.items)
     _calItems=mondayItems;
     localStorage.setItem('mm_monday_items_'+activeJobId,JSON.stringify(mondayItems));
     document.getElementById('cal-status').textContent='● Connected · '+mondayItems.length+' items';
+    saveMondayToGitHub(activeJobId,apiKey,mondayItems);
     renderCalendar();showToast('Calendar loaded');
   }catch(e){showToast('Connection failed',true);}
 }
@@ -1204,7 +1334,11 @@ mondayItems=processMondayItems((board.items_page&&board.items_page.items)||[]);
     localStorage.setItem('mm_monday_items_'+activeJobId,JSON.stringify(mondayItems));
     document.getElementById('monday-status').textContent='● Connected · '+mondayItems.length+' items · '+new Date().toLocaleTimeString();
     buildGantt(mondayItems,board.name);
-    showToast('Synced: '+mondayItems.length+' items');
+    showToast('Syncing to GitHub...');
+    saveMondayToGitHub(activeJobId,apiKey,mondayItems).then(function(ok){
+      if(ok)showToast('Monday data saved to GitHub ✓');
+      else showToast('Synced locally (GitHub save failed)',true);
+    });
   }catch(e){showToast('Failed — check API key',true);}
 }
 
@@ -1484,14 +1618,29 @@ function switchJob(jobId,skipRender){
   if(!job)return;
   activeJobId=jobId;
   activeJob=job;
-  loadFromStorage();
+  loadFromStorageOrGitHub(jobId).then(function(){renderMonthList();});
   document.getElementById('sync-job-nm').textContent=job.name+' → '+job.repo;
   if(document.getElementById('rb-badge'))document.getElementById('rb-badge').textContent='✓ '+job.name;
 activeMonth=null;
   var storedItems=localStorage.getItem('mm_monday_items_'+jobId);
-  mondayItems=storedItems?JSON.parse(storedItems):[];
-  _calItems=mondayItems;
-  renderMonthList();
+  if(storedItems){
+    mondayItems=JSON.parse(storedItems);
+    _calItems=mondayItems;
+    renderMonthList();
+  } else {
+    mondayItems=[];_calItems=[];
+    renderMonthList();
+    // Try loading Monday data from GitHub
+    loadMondayFromGitHub(jobId).then(function(data){
+      if(data&&data.items&&data.items.length){
+        mondayItems=data.items;_calItems=data.items;
+        if(data.apiKey){mondayConfig={apiKey:data.apiKey,boardId:data.boardId||''};}
+        localStorage.setItem('mm_monday_items_'+jobId,JSON.stringify(mondayItems));
+        if(activeTab==='schedule'||activeTab==='calendar')renderContent();
+        showToast('Monday data loaded from GitHub ✓');
+      }
+    });
+  }
   if(!skipRender)showEmpty();
   updateSyncBar();
 }
