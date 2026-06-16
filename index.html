@@ -985,7 +985,7 @@ function renderCosts(data){
   // Category header row cells — exact match to original rendering
   function dataCellCat(col,sub){
     var v=sub[col.key]||0;
-    if(col.key==='ob')return'<td class="num" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';
+    if(col.key==='ob')return'<td class="num '+(v<0?'red':'')+'" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';
     if(col.key==='co')return'<td class="num" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';
     if(col.key==='tbc')return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';
     if(col.key==='budget')return'<td class="num">'+fmtM(v)+'</td>';
