@@ -603,7 +603,7 @@ function doLogin(){
   if(document.getElementById('pw').value===getAdminPass()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='flex';
-    loadFromStorage();renderMonthList();if(activeMonth)updateBar();initJobs();
+    initJobs();
   } else {
     var e=document.getElementById('login-err');e.classList.remove('show');void e.offsetWidth;e.classList.add('show');
   }
@@ -744,14 +744,12 @@ function loadFromStorage(){
 
 async function loadFromStorageOrGitHub(jobId){
   var jid=jobId||'widgeon';
-  try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d&&Object.keys(JSON.parse(d)).length){reports=JSON.parse(d);return;}}catch(e){}
-  reports={};
+  // Load localStorage immediately as fast cache
+  try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d){reports=JSON.parse(d);renderMonthList();}}catch(e){reports={};}
+  // Always also check GitHub for latest data
   var gh=getGhCfg();
   if(!gh.token||!gh.user)return;
-  var sbar=document.getElementById('config-load-status');
-  if(sbar){sbar.style.display='block';sbar.textContent='Loading reports from GitHub...';}
   var ok=await loadReportsFromGitHub(jid);
-  if(sbar){sbar.textContent=ok?'Reports loaded from GitHub':'No saved reports found';setTimeout(function(){sbar.style.display='none';},2500);}
   if(ok){renderMonthList();}
 }
 // ── END GITHUB REPORTS STORAGE ───────────────────────────────────────────────
@@ -1555,20 +1553,26 @@ async function loadConfigAndInit(){
   if(status){status.style.display='block';status.textContent='Loading config from GitHub...';}
   var cfg=await fetchConfigFromGitHub();
   if(cfg){
-    // Sync config jobs to localStorage as backup
-    if(cfg.jobs&&cfg.jobs.length){
-      localStorage.setItem('mm_jobs',JSON.stringify(cfg.jobs));
-    }
-    if(cfg.clientInfo){
-      Object.keys(cfg.clientInfo).forEach(function(k){
-        localStorage.setItem('mm_clientinfo_'+k,JSON.stringify(cfg.clientInfo[k]));
-      });
-    }
-    if(status){status.textContent='✓ Config loaded from GitHub';setTimeout(function(){status.style.display='none';},2000);}
+    if(cfg.jobs&&cfg.jobs.length){localStorage.setItem('mm_jobs',JSON.stringify(cfg.jobs));}
+    if(cfg.clientInfo){Object.keys(cfg.clientInfo).forEach(function(k){localStorage.setItem('mm_clientinfo_'+k,JSON.stringify(cfg.clientInfo[k]));});}
+    if(cfg.monday){Object.keys(cfg.monday).forEach(function(k){var m=cfg.monday[k];localStorage.setItem('mcmann_m8',JSON.stringify({apiKey:m.apiKey||'',boardId:m.boardId||''}));});}
+    if(status){status.textContent='✓ Config loaded';setTimeout(function(){status.style.display='none';},1000);}
   } else {
-    if(status){status.textContent='Using local data (GitHub config not found)';setTimeout(function(){status.style.display='none';},3000);}
+    if(status){status.textContent='No config found — using local';setTimeout(function(){status.style.display='none';},2000);}
   }
   initJobsFromStorage();
+  // Always load reports from GitHub after config
+  var activeId=activeJobId||'widgeon';
+  var sbar=document.getElementById('config-load-status');
+  if(sbar){sbar.style.display='block';sbar.textContent='Loading reports from GitHub...';}
+  loadReportsFromGitHub(activeId).then(function(ok){
+    if(sbar){sbar.textContent=ok?'✓ Reports loaded':'No reports on GitHub yet';setTimeout(function(){sbar.style.display='none';},2500);}
+    renderMonthList();
+    if(ok&&Object.keys(reports).length){
+      var keys=Object.keys(reports).sort(function(a,b){return new Date(b)-new Date(a);});
+      selectMonth(keys[0]);
+    }
+  });
 }
 
 function initJobsFromStorage(){
