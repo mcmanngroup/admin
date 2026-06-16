@@ -905,35 +905,40 @@ function renderCosts(data){
 
   // Build a data cell for a given schema column and item values
   // ob/co cells store the raw signed value in data-raw so domN can recover it after display formatting
+  // Detail row cells — exact match to original rendering
   function dataCell(col,item){
-    var v=item[col.key];
-    if(col.key==='ob'){return'<td class="num" data-raw="'+(v||0)+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
-    if(col.key==='co'){return'<td class="num">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';}
-    if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';}
-    if(col.key==='budget'){return'<td class="num"><input class="ce num" value="'+(v?fmtM(v):'—')+'"/></td>';}
+    var v=item[col.key]||0;
+    if(col.key==='ob')return'<td class="num '+(v<0?'red':'')+'" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';
+    if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';
+    if(col.key==='tbc')return'<td class="num green">'+(v?fmtM(v):'—')+'</td>';
+    if(col.key==='budget')return'<td class="num"><input class="ce num" value="'+(v?fmtM(v):'—')+'"/></td>';
     return'<td class="num blue">'+(v?fmtM(v):'—')+'</td>';
   }
+  // Subtotal row cells — exact match to original rendering
   function dataCellSub(col,sub){
     var v=sub[col.key]||0;
-    if(col.key==='ob'){return'<td class="num '+(v<0?'red':'')+'" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
-    if(col.key==='co'){return'<td class="num '+(v>0?'gold':'')+'"><input class="ce num" value="'+(v>0?fmtM(v):'—')+'"/></td>';}
-    if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'"><input class="ce num" value="'+fmtM(v)+'"/></td>';}
-    if(col.key==='budget'){return'<td class="num bud"><input class="ce num" value="'+fmtM(v)+'"/></td>';}
+    if(col.key==='ob')return'<td class="num '+(v<0?'red':'')+'" data-raw="'+v+'" style="'+(v<0?'':'color:rgba(255,255,255,.3)')+'"><input class="ce num" value="'+(v<0?fmtAbs(v):'—')+'"/></td>';
+    if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'" style="'+(v>0?'':'color:rgba(255,255,255,.3)')+'"><input class="ce num" value="'+(v>0?fmtM(v):'—')+'"/></td>';
+    if(col.key==='tbc')return'<td class="num green"><input class="ce num" value="'+fmtM(v)+'"/></td>';
+    if(col.key==='budget')return'<td class="num bud"><input class="ce num" value="'+fmtM(v)+'"/></td>';
     return'<td class="num blue"><input class="ce num" value="'+fmtM(v)+'"/></td>';
   }
+  // Category header row cells — exact match to original rendering
   function dataCellCat(col,sub){
     var v=sub[col.key]||0;
-    if(col.key==='ob'){return'<td class="num" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
-    if(col.key==='co'){return'<td class="num" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';}
-    if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';}
+    if(col.key==='ob')return'<td class="num" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';
+    if(col.key==='co')return'<td class="num" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';
+    if(col.key==='tbc')return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';
+    if(col.key==='budget')return'<td class="num">'+fmtM(v)+'</td>';
     return'<td class="num blue">'+fmtM(v)+'</td>';
   }
+  // Totals row cells — exact match to original rendering
   function dataCellTotal(col,t){
     var v=t[col.key]||0;
-    if(col.key==='ob'){return'<td class="num '+(v!==0?'red':'')+'"><strong>'+(v!==0?fmtAbs(v):'—')+'</strong></td>';}
-    if(col.key==='co'){return'<td class="num '+(v>0?'gold':'')+'"><strong>'+fmtM(v)+'</strong></td>';}
-    if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'"><strong>'+fmtM(v)+'</strong></td>';}
-    if(col.key==='budget'){return'<td class="num bud"><strong>'+fmtM(v)+'</strong></td>';}
+    if(col.key==='ob')return'<td class="num '+(v!==0?'red':'')+'" data-raw="'+v+'"><strong>'+(v!==0?fmtAbs(v):'—')+'</strong></td>';
+    if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'"><strong>'+fmtM(v)+'</strong></td>';
+    if(col.key==='tbc')return'<td class="num '+(v>0?'green':v<0?'red':'')+'"><strong>'+fmtM(v)+'</strong></td>';
+    if(col.key==='budget')return'<td class="num bud"><strong>'+fmtM(v)+'</strong></td>';
     return'<td class="num blue"><strong>'+fmtM(v)+'</strong></td>';
   }
 
