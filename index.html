@@ -715,12 +715,12 @@ var DEFAULT_COL_LABELS=['Line Item','Budget','Prev. Invoiced','Current Invoice',
 // Fuzzy map: lowercase fragment → internal key
 var COL_KEY_MAP={
   'line item':'label','description':'label','item':'label',
+  'over budget':'ob','over':'ob','variance':'ob',
   'budget':'budget','estimate':'budget',
   'prev':'prevInv','previous':'prevInv',
   'current':'curInv',
   'total inv':'totInv','total bill':'totInv','invoiced':'totInv',
   'to be':'tbc','remaining':'tbc','balance':'tbc',
-  'over':'ob','variance':'ob',
   'change order':'co','c/o':'co','credit':'co','additions':'co'
 };
 function guessKey(header){
@@ -885,6 +885,9 @@ function renderCosts(data){
   if(!data['Cost Breakdown']){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No Cost Breakdown data</div></div>';return;}
   var rows=data['Cost Breakdown'];
   var schema=getColSchema(data);
+  // Auto-fix: rebuild schema if 'ob' column was misdetected (e.g. "Over Budget" matched "budget" first)
+  var hasOb=schema.find(function(c){return c.key==='ob'&&!c._auto;});
+  if(!hasOb&&rows.length){data._colSchema=buildColSchema(rows);schema=data._colSchema;save();}
   var visibleCols=schema.filter(function(c){return c.visible!==false&&c.key!=='label';});
 
   // Helper: get value from row by key
@@ -971,7 +974,7 @@ function renderCosts(data){
     if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';
     if(col.key==='tbc')return'<td class="num green">'+(v?fmtM(v):'—')+'</td>';
     if(col.key==='budget')return'<td class="num"><input class="ce num" value="'+(v?fmtM(v):'—')+'"/></td>';
-    return'<td class="num blue">'+(v?fmtM(v):'—')+'</td>';
+    return'<td class="num '+(v<0?'red':'blue')+'">'+(v?fmtM(v):'—')+'</td>';
   }
   // Subtotal row cells — exact match to original rendering
   function dataCellSub(col,sub){
@@ -980,7 +983,7 @@ function renderCosts(data){
     if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'" style="'+(v>0?'':'color:rgba(255,255,255,.3)')+'"><input class="ce num" value="'+(v>0?fmtM(v):'—')+'"/></td>';
     if(col.key==='tbc')return'<td class="num green"><input class="ce num" value="'+fmtM(v)+'"/></td>';
     if(col.key==='budget')return'<td class="num bud"><input class="ce num" value="'+fmtM(v)+'"/></td>';
-    return'<td class="num blue"><input class="ce num" value="'+fmtM(v)+'"/></td>';
+    return'<td class="num '+(v<0?'red':'blue')+'"><input class="ce num" value="'+fmtM(v)+'"/></td>';
   }
   // Category header row cells — exact match to original rendering
   function dataCellCat(col,sub){
@@ -989,7 +992,7 @@ function renderCosts(data){
     if(col.key==='co')return'<td class="num" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';
     if(col.key==='tbc')return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';
     if(col.key==='budget')return'<td class="num">'+fmtM(v)+'</td>';
-    return'<td class="num blue">'+fmtM(v)+'</td>';
+    return'<td class="num '+(v<0?'red':'blue')+'">'+(v?fmtM(v):'—')+'</td>';
   }
   // Totals row cells — exact match to original rendering
   function dataCellTotal(col,t){
@@ -998,7 +1001,7 @@ function renderCosts(data){
     if(col.key==='co')return'<td class="num '+(v>0?'gold':'')+'" data-raw="'+v+'"><strong>'+fmtM(v)+'</strong></td>';
     if(col.key==='tbc')return'<td class="num '+(v>0?'green':v<0?'red':'')+'"><strong>'+fmtM(v)+'</strong></td>';
     if(col.key==='budget')return'<td class="num bud"><strong>'+fmtM(v)+'</strong></td>';
-    return'<td class="num blue"><strong>'+fmtM(v)+'</strong></td>';
+    return'<td class="num '+(v<0?'red':'blue')+'"><strong>'+fmtM(v)+'</strong></td>';
   }
 
   sections.forEach(function(sec,si){
