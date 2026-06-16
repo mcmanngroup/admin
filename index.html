@@ -904,9 +904,10 @@ function renderCosts(data){
     +'<tbody id="costs-tbody">';
 
   // Build a data cell for a given schema column and item values
+  // ob/co cells store the raw signed value in data-raw so domN can recover it after display formatting
   function dataCell(col,item){
     var v=item[col.key];
-    if(col.key==='ob'){return'<td class="num">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
+    if(col.key==='ob'){return'<td class="num" data-raw="'+(v||0)+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
     if(col.key==='co'){return'<td class="num">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';}
     if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';}
     if(col.key==='budget'){return'<td class="num"><input class="ce num" value="'+(v?fmtM(v):'—')+'"/></td>';}
@@ -914,7 +915,7 @@ function renderCosts(data){
   }
   function dataCellSub(col,sub){
     var v=sub[col.key]||0;
-    if(col.key==='ob'){return'<td class="num '+(v<0?'red':'')+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
+    if(col.key==='ob'){return'<td class="num '+(v<0?'red':'')+'" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
     if(col.key==='co'){return'<td class="num '+(v>0?'gold':'')+'"><input class="ce num" value="'+(v>0?fmtM(v):'—')+'"/></td>';}
     if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'"><input class="ce num" value="'+fmtM(v)+'"/></td>';}
     if(col.key==='budget'){return'<td class="num bud"><input class="ce num" value="'+fmtM(v)+'"/></td>';}
@@ -922,8 +923,8 @@ function renderCosts(data){
   }
   function dataCellCat(col,sub){
     var v=sub[col.key]||0;
-    if(col.key==='ob'){return'<td class="num">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
-    if(col.key==='co'){return'<td class="num">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';}
+    if(col.key==='ob'){return'<td class="num" data-raw="'+v+'">'+(v<0?'<span class="over-tag">'+fmtAbs(v)+'</span>':'—')+'</td>';}
+    if(col.key==='co'){return'<td class="num" data-raw="'+v+'">'+(v>0?'<span class="co-tag">'+fmtM(v)+'</span>':'—')+'</td>';}
     if(col.key==='tbc'){return'<td class="num '+(v>0?'green':v<0?'red':'')+'">'+fmtM(v)+'</td>';}
     return'<td class="num blue">'+fmtM(v)+'</td>';
   }
@@ -1755,7 +1756,10 @@ function buildDashboardPayload(data){
   function domN(tr,key){
     var idx=_domColKeys.indexOf(key);
     if(idx<0||!tr.cells[idx])return 0;
-    return n(cellVal(tr.cells[idx]));
+    var td=tr.cells[idx];
+    // ob and co cells store the real signed value in data-raw to survive display formatting (fmtAbs strips sign)
+    if(td.hasAttribute('data-raw')){var raw=parseFloat(td.getAttribute('data-raw'));return isNaN(raw)?0:raw;}
+    return n(cellVal(td));
   }
   if(costsTable){
     var curCat=null;
