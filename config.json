@@ -18,10 +18,10 @@
     },
     {
       "id": "russ_rachelle_mcmann",
-      "name": "Russ & Rachelle Mcmann",
+      "name": "2590 Stobart Road",
       "repo": "Russ-Rachelle-Mcmann",
       "url": "",
-      "client": "",
+      "client": "Russ & Rachelle Mcmann",
       "mondayBoardId": "18417871608"
     }
   ],
@@ -38,10 +38,10 @@
       "reportLabel": "January 1, 2026 – May 31, 2026"
     },
     "russ_rachelle_mcmann": {
-      "clientName": "",
+      "clientName": "Russ & Rachelle Mcmann",
       "clientEmail": "",
       "clientPhone": "",
-      "projectName": "Russ & Rachelle Mcmann",
+      "projectName": "2590 Stobart Road",
       "projectAddress": "",
       "projectManager": "A. McMann",
       "dateFrom": "2025-11-01",
