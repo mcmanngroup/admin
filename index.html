@@ -688,16 +688,40 @@ async function loadFromStorage(){
   if(cfg){mondayConfig=cfg.data;_cfgSha=cfg.sha;}else{mondayConfig={};}
 }
 
+// Extract background color of col A for each row in a sheet.
+// Returns an array indexed by row (0-based) containing the RGB string or ''.
+function extractRowColors(wb, sheetName){
+  var colors=[];
+  if(wb.SheetNames.indexOf(sheetName)<0)return colors;
+  var ws=wb.Sheets[sheetName];
+  var ref=ws['!ref'];if(!ref)return colors;
+  var range=XLSX.utils.decode_range(ref);
+  for(var R=range.s.r;R<=range.e.r;R++){
+    var addr=XLSX.utils.encode_cell({r:R,c:0});
+    var cell=ws[addr];
+    var rgb='';
+    if(cell&&cell.s&&cell.s.fgColor){
+      var fc=cell.s.fgColor;
+      if(fc.rgb)rgb=fc.rgb;
+      else if(fc.theme!==undefined)rgb='theme:'+fc.theme;
+    }
+    colors[R]=rgb;
+  }
+  return colors;
+}
+
 function handleUpload(e){
   var file=e.target.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(ev){
     try{
-      var wb=XLSX.read(ev.target.result,{type:'binary'});
+      var wb=XLSX.read(ev.target.result,{type:'binary',cellStyles:true});
       var data={filename:file.name,uploadedAt:new Date().toLocaleString()};
       ['Cost Breakdown','Timesheet','Material'].forEach(function(s){
         if(wb.SheetNames.indexOf(s)>-1)data[s]=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,defval:''});
       });
+      // Extract per-row background colors from Cost Breakdown for color-based row classification
+      data._cbRowColors=extractRowColors(wb,'Cost Breakdown');
       // Build column schema from actual Cost Breakdown headers
       data._colSchema=buildColSchema(data['Cost Breakdown']||[]);
       var key=detectMonth(file.name);
@@ -713,19 +737,21 @@ function handleUpload(e){
 var DEFAULT_COL_KEYS=['label','budget','prevInv','curInv','totInv','tbc','ob','co'];
 var DEFAULT_COL_LABELS=['Line Item','Budget','Prev. Invoiced','Current Invoice','Total Invoiced','To Be Completed','Over Budget','Change Orders'];
 // Fuzzy map: lowercase fragment → internal key
-var COL_KEY_MAP={
-  'line item':'label','description':'label','item':'label',
-  'over budget':'ob','over':'ob','variance':'ob',
-  'budget':'budget','estimate':'budget',
-  'prev':'prevInv','previous':'prevInv',
-  'current':'curInv',
-  'total inv':'totInv','total bill':'totInv','invoiced':'totInv',
-  'to be':'tbc','remaining':'tbc','balance':'tbc',
-  'change order':'co','c/o':'co','credit':'co','additions':'co'
-};
+// Order matters — more specific fragments must come before shorter ones that could false-match
+// e.g. 'over budget' and 'to be completed' must come before 'budget'
+var COL_KEY_MAP=[
+  ['line item','label'],['description','label'],
+  ['over budget','ob'],['variance','ob'],
+  ['to be completed','tbc'],['to be','tbc'],['remaining','tbc'],['balance','tbc'],
+  ['change order','co'],['c/o','co'],['credit','co'],['additions','co'],
+  ['prev invoiced','prevInv'],['prev. inv','prevInv'],['previous','prevInv'],['prev','prevInv'],
+  ['current invoice','curInv'],['current inv','curInv'],['current','curInv'],
+  ['total invoiced','totInv'],['total inv','totInv'],['total bill','totInv'],['invoiced','totInv'],
+  ['budget','budget'],['estimate','budget']
+];
 function guessKey(header){
   var h=(header||'').toLowerCase().trim();
-  for(var frag in COL_KEY_MAP){if(h.indexOf(frag)>-1)return COL_KEY_MAP[frag];}
+  for(var i=0;i<COL_KEY_MAP.length;i++){if(h.indexOf(COL_KEY_MAP[i][0])>-1)return COL_KEY_MAP[i][1];}
   return null;
 }
 function buildColSchema(rows){
@@ -813,8 +839,7 @@ function renderContent(){
   else if(activeTab==='materials')renderMaterials(data);
 }
 
-var fmtM=function(v){return typeof v==='number'?'$'+v.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';};
-var fmtAbs=function(v){return typeof v==='number'?'$'+Math.abs(v).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';};
+var fmtM=function(v){if(typeof v!=='number')return'—';if(v<0)return'($'+Math.abs(v).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+')';return'$'+v.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});};var fmtAbs=function(v){return typeof v==='number'?'$'+Math.abs(v).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';};
 var fmtN=function(v){if(typeof v==='number')return v;var p=parseFloat(String(v).replace(/[$,]/g,''));return isNaN(p)?0:p;};
 var fmtD=function(v){if(!v||v==='')return'—';if(v instanceof Date)return v.toLocaleDateString('en-CA');if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400*1000));return d.toLocaleDateString('en-CA');}return v;};
 
@@ -894,32 +919,24 @@ function renderCosts(data){
   function rv(r,key){var c=schCol(schema,key);return c.excelIndex>=0?fmtN(r[c.excelIndex]):0;}
 
   var sections=[],totalsRows=[],cur=null;
-  // Skip header rows (rows where col0 is non-numeric and row1 is empty or text)
-  var dataStart=0;
-  for(var si=0;si<Math.min(4,rows.length);si++){
-    var r0=rows[si],c0=String(r0[0]||'').trim();
-    if(c0&&isNaN(parseFloat(c0.replace(/[$,]/g,''))))dataStart=si+1;
-    else break;
-  }
-  rows.slice(dataStart).forEach(function(r){
+  rows.slice(1).forEach(function(r){
     var label=(r[0]||'').toString().trim();
     if(!label)return;
     var b=rv(r,'budget'),inv=rv(r,'totInv'),prev=rv(r,'prevInv'),cur2=rv(r,'curInv'),tbc=rv(r,'tbc'),over=rv(r,'ob'),co=rv(r,'co');
-    var isSub=label.indexOf('Subtotal')>-1||label.indexOf('SUBTOTAL')>-1;
-    var isTotal=label==='PROJECT TOTAL'||label==='Project Subtotal'||label.indexOf('Mark-up')>-1||label.indexOf('Mark up')>-1||label.indexOf('GST')>-1;
+var isSub=label.toLowerCase().indexOf('subtotal')>-1;    var isTotal=label==='PROJECT TOTAL'||label==='Project Subtotal'||label.indexOf('Mark-up')>-1||label.indexOf('Mark up')>-1||label.indexOf('GST')>-1||label.indexOf('10%')>-1||label.indexOf('15%')>-1;
     var isHdr=!b&&!inv&&!isSub&&!isTotal&&label.indexOf('Change Order')<0&&label.indexOf('Credit')<0&&label.indexOf('COLOUR')<0&&label!=='LINE ITEM';
     if(isTotal){totalsRows.push({label:label,b:b,prev:prev,cur2:cur2,inv:inv,tbc:tbc,over:over,co:co});return;}
     if(isHdr){cur={label:label,items:[],sub:null};sections.push(cur);return;}
     if(isSub){if(cur)cur.sub={label:label,b:b,prev:prev,cur2:cur2,inv:inv,tbc:tbc,over:over,co:co};return;}
-    if(cur&&label!=='LINE ITEM'){
+if(cur&&!label.match(/^line item$/i)){
       var isCO=label.indexOf('Change Order')>-1||label.indexOf('Credit')>-1;
       cur.items.push({label:label,isCO:isCO,b:b,prev:prev,cur2:cur2,inv:inv,tbc:tbc,over:over,co:co});
     }
   });
 
-  var pt=totalsRows.find(function(t){return t.label==='PROJECT TOTAL';})||{};
-  var tb=pt.b||0,ti=pt.inv||0,rem=tb-ti,tco=pt.co||0;
-  var pctInv=tb>0?Math.min((ti/tb)*100,100):0;
+  // KPI: find project total by highest budget value, not by label text
+  var pt=totalsRows.reduce(function(best,t){return t.b>best.b?t:best;},{b:0,inv:0,tbc:0,co:0,over:0,prev:0,cur2:0,label:''});
+var tb=pt.b||0,ti=pt.inv||0,rem=pt.tbc||0,tco=pt.co||0;  var pctInv=tb>0?Math.min((ti/tb)*100,100):0;
   var pctRem=tb>0?Math.min((rem/tb)*100,100):0;
   var pctCo=tb>0?Math.min((tco/tb)*100,100):0;
 
@@ -1127,8 +1144,8 @@ function renderTimesheet(data){
   rows.forEach(function(r){
     var col0=(r[0]||'').toString().trim();
     var isEntry=typeof r[1]==='number';
-    var isGrandTotal=col0.toLowerCase()==='total timesheet'||col0.toLowerCase()==='total hours';
-    var isGroupTotal=!isGrandTotal&&col0.toLowerCase().indexOf('total')===0;
+var isGrandTotal=!isEntry&&(col0.toLowerCase()==='total timesheet'||col0.toLowerCase()==='total hours');
+var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1;
     var isTotal=isGrandTotal||isGroupTotal;
     var isHeader=col0&&!isEntry&&!isTotal&&col0.toLowerCase()!=='line item';
     if(isGroupTotal){return;} // skip — ts-sub-row handles group totals
@@ -1200,8 +1217,7 @@ function renderMaterials(data){
   if(!data['Material']){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">No Materials data</div></div>';return;}
   var rows=data['Material'];
   var grandTotal=0;
-  rows.forEach(function(r){var l=(r[0]||'').toString().trim();if(l.indexOf('Total Vendor')===0){grandTotal=fmtN(r[5]);}});
-
+rows.forEach(function(r){var l=(r[0]||'').toString().trim();if(l.toLowerCase().indexOf('total')===0){grandTotal=fmtN(r[5]);}});
   var html='<div class="section-card">'
     +'<div class="section-head"><div><h2>Vendor Bills</h2><p>Click vendor to expand</p></div></div>'
     +'<div class="tbar">'
@@ -1224,12 +1240,11 @@ function renderMaterials(data){
     var col0=r[0];
     var col0s=(col0===null||col0===undefined||col0!==col0)?'':col0.toString().trim();
     var isBill=(col0===null||col0===undefined||(typeof col0==='number'&&isNaN(col0))||col0s==='')&&r[1]==='Bill';
-    if(['PROJECT','CLIENT','DATE / PREP','LINE ITEM'].some(function(x){return col0s.trimStart().indexOf(x)===0;}))return;
-    if(col0s==='Vendor Detail'||col0s==='Vendor Detail ')return;
+if(['project','client','date / prep','line item'].some(function(x){return col0s.toLowerCase().trimStart().indexOf(x)===0;}))return;    if(col0s.toLowerCase().indexOf('vendor detail')===0)return;
     if(!col0s&&!isBill)return;
-    var isGrand=col0s.indexOf('Total Vendor')===0;
-    var isVendorTotal=col0s.indexOf('Total ')===0&&!isGrand;
-    var isVendorHeader=col0s&&col0s.indexOf('Total')!==0&&!isBill&&(r[1]===''||r[1]===null||r[1]===undefined);
+var isGrand=col0s.toLowerCase().indexOf('total vendor')===0||col0s.toLowerCase().indexOf('grand total')===0;
+var isVendorTotal=col0s.toLowerCase().indexOf('total')===0&&!isGrand;
+var isVendorHeader=col0s&&col0s.toLowerCase().indexOf('total')!==0&&!isBill&&(r[1]===''||r[1]===null||r[1]===undefined);
 
     if(isGrand){
       var vCount=matSecId;
