@@ -1239,8 +1239,7 @@ rows.forEach(function(r){var l=(r[0]||'').toString().trim();if(l.toLowerCase().i
   rows.forEach(function(r){
     var col0=r[0];
     var col0s=(col0===null||col0===undefined||col0!==col0)?'':col0.toString().trim();
-    var isBill=(col0===null||col0===undefined||(typeof col0==='number'&&isNaN(col0))||col0s==='')&&r[1]==='Bill';
-if(['project','client','date / prep','line item'].some(function(x){return col0s.toLowerCase().trimStart().indexOf(x)===0;}))return;    if(col0s.toLowerCase().indexOf('vendor detail')===0)return;
+var isBill=(col0===null||col0===undefined||(typeof col0==='number'&&isNaN(col0))||col0s==='')&&(r[1]==='Bill'||r[1]==='Cheque'||r[1]==='Credit'||r[1]==='Credit Card Charge');if(['project','client','date / prep','line item'].some(function(x){return col0s.toLowerCase().trimStart().indexOf(x)===0;}))return;    if(col0s.toLowerCase().indexOf('vendor detail')===0)return;
     if(!col0s&&!isBill)return;
 var isGrand=col0s.toLowerCase().indexOf('total vendor')===0||col0s.toLowerCase().indexOf('grand total')===0;
 var isVendorTotal=col0s.toLowerCase().indexOf('total')===0&&!isGrand;
