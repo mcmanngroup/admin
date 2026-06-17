@@ -14301,7 +14301,7 @@
         "key": "co",
         "label": "CHANGE ORDERS",
         "excelIndex": 7,
-        "visible": true
+        "visible": false
       }
     ]
   }
