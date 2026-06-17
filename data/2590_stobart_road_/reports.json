@@ -14271,7 +14271,7 @@
         "key": "prevInv",
         "label": "Prev. Invoiced",
         "excelIndex": 2,
-        "visible": true
+        "visible": false
       },
       {
         "key": "curInv",
