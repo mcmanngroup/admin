@@ -14277,7 +14277,7 @@
         "key": "curInv",
         "label": "CURRENT INVOICE",
         "excelIndex": 3,
-        "visible": true
+        "visible": false
       },
       {
         "key": "totInv",
