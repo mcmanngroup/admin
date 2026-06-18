@@ -1239,8 +1239,7 @@ var hrsCell=document.getElementById('ts-hrs-'+g);
     if(subRow){
       subRow.cells[0].textContent='Total — '+label;
       if(subRow.cells[1])subRow.cells[1].textContent=tot.toFixed(2);
-      if(subRow.cells[2])subRow.cells[2].textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
-    }
+if(subRow.cells[3])subRow.cells[3].textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});    }
   });
   var grandAmt=0;
   document.querySelectorAll('.ts-detail .ce.num').forEach(function(inp,i){
