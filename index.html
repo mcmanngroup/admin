@@ -1143,7 +1143,7 @@ function renderTimesheet(data){
   var tsSecId=0,tsCurrent=null;
   rows.forEach(function(r){
     var col0=(r[0]||'').toString().trim();
-    var isEntry=typeof r[1]==='number';
+var isEntry=typeof r[1]==='number'||(typeof r[1]==='string'&&/^\d+$/.test(r[1].trim())&&parseFloat(r[1])>40000);
 var isGrandTotal=!isEntry&&(col0.toLowerCase()==='total timesheet'||col0.toLowerCase()==='total hours');
 var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1;
     var isTotal=isGrandTotal||isGroupTotal;
@@ -1202,7 +1202,7 @@ var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1
     var subRow=document.getElementById('ts-sub-'+g);
     if(subRow){
       subRow.cells[0].textContent='Total — '+label;
-      if(subRow.cells[3])subRow.cells[3].textContent=tot.toFixed(2);
+if(subRow.cells[1])subRow.cells[1].textContent=tot.toFixed(2);
     }
   });
 }
