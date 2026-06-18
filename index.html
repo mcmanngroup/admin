@@ -1156,10 +1156,11 @@ var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1
       // emit sub row for previous group before starting new one
       if(tsCurrent){
 html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
-  +'<td colspan="5">Total — </td>'
-  +'<td class="num">—</td>'
-  +'<td></td>'
-  +'</tr>';
+      +'<td colspan="3">Total — </td>'
+      +'<td class="num">—</td>'
+      +'<td class="num">—</td>'
+      +'<td></td>'
+      +'</tr>';
       }
       tsSecId++;tsCurrent='ts'+tsSecId;
       html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'
@@ -1170,9 +1171,10 @@ html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+
     } else if(isTotal){
 html+='<tr class="ts-total-row">'
   +'<td colspan="5"><strong>'+col0+'</strong></td>'
-  +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-  +'<td></td>'
-  +'</tr>';
++'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
++'<td class="num"><strong>'+(typeof r[6]==='number'?'$'+r[6].toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</strong></td>'
++'<td></td>'
++'</tr>';
     } else if(isEntry){
 html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
   +'<td><input class="ce" value="'+fmtD(r[1])+'" style="font-family:var(--mono);font-size:12px"/></td>'
@@ -1203,16 +1205,19 @@ html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
     var btn=row.querySelector('.expand-btn');if(!btn)return;
     var g=btn.id.replace('btn-','');
     var label=row.querySelector('strong')?row.querySelector('strong').textContent:'';
-    var tot=0;
-    document.querySelectorAll('.ts-detail[data-group="'+g+'"] .ce.num').forEach(function(inp){
-      var v=parseFloat(inp.value);if(!isNaN(v))tot+=v;
+var tot=0,totAmt=0;
+    document.querySelectorAll('.ts-detail[data-group="'+g+'"]').forEach(function(tr){
+      var inputs=tr.querySelectorAll('.ce.num');
+      if(inputs[0]){var h=parseFloat(inputs[0].value);if(!isNaN(h))tot+=h;}
+      if(inputs[2]){var a=parseFloat(inputs[2].value);if(!isNaN(a))totAmt+=a;}
     });
-    var numCell=document.getElementById('ts-num-'+g);
-    if(numCell)numCell.textContent=tot.toFixed(2);
+var numCell=document.getElementById('ts-num-'+g);
+    if(numCell)numCell.textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
     var subRow=document.getElementById('ts-sub-'+g);
     if(subRow){
       subRow.cells[0].textContent='Total — '+label;
-if(subRow.cells[1])subRow.cells[1].textContent=tot.toFixed(2);
+      if(subRow.cells[1])subRow.cells[1].textContent=tot.toFixed(2);
+      if(subRow.cells[2])subRow.cells[2].textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
   });
 }
