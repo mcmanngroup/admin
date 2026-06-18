@@ -1182,8 +1182,8 @@ html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
   +'<td class="name"><input class="ce" value="'+(r[2]||'').replace(/"/g,'&quot;')+'"/></td>'
   +'<td><input class="ce" value="'+(r[3]||'').replace(/"/g,'&quot;')+'"/></td>'
   +'<td class="num"><input class="ce num" value="'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'"/></td>'
-  +'<td class="num"><input class="ce num" value="'+(typeof r[5]==='number'?r[5].toFixed(2):'—')+'"/></td>'
-  +'<td class="num"><input class="ce num" value="'+(typeof r[6]==='number'?r[6].toFixed(2):'—')+'"/></td>'
+  +'<td class="num"><input class="ce num" value="'+(r[5]?parseFloat(String(r[5]).replace(/[$,\s]/g,''))||0:'—')+'"/></td>'
++'<td class="num"><input class="ce num" value="'+(r[6]?parseFloat(String(r[6]).replace(/[$,\s]/g,''))||0:'—')+'"/></td>'
   +'<td><div class="ra"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>'
   +'</tr>';
     }
@@ -1209,8 +1209,8 @@ html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
 var tot=0,totAmt=0;
     document.querySelectorAll('.ts-detail[data-group="'+g+'"]').forEach(function(tr){
       var inputs=tr.querySelectorAll('.ce.num');
-      if(inputs[0]){var h=parseFloat(inputs[0].value);if(!isNaN(h))tot+=h;}
-      if(inputs[2]){var a=parseFloat(inputs[2].value);if(!isNaN(a))totAmt+=a;}
+      if(inputs[0]){var h=parseFloat(String(inputs[0].value).replace(/[$,]/g,''));if(!isNaN(h))tot+=h;}
+      if(inputs[2]){var a=parseFloat(String(inputs[2].value).replace(/[$,]/g,''));if(!isNaN(a))totAmt+=a;}
     });
 var hrsCell=document.getElementById('ts-hrs-'+g);
     if(hrsCell)hrsCell.textContent=tot.toFixed(2);
