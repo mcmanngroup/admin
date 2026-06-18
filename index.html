@@ -1163,18 +1163,19 @@ html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+
       +'</tr>';
       }
       tsSecId++;tsCurrent='ts'+tsSecId;
-      html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'
-  +'<td colspan="5"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'
+html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'
+  +'<td colspan="4"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'
+  +'<td class="num" id="ts-hrs-'+tsCurrent+'">—</td>'
   +'<td class="num" id="ts-num-'+tsCurrent+'">—</td>'
   +'<td></td>'
   +'</tr>';
     } else if(isTotal){
 html+='<tr class="ts-total-row">'
-  +'<td colspan="5"><strong>'+col0+'</strong></td>'
-+'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-+'<td class="num"><strong>'+(typeof r[6]==='number'?'$'+r[6].toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</strong></td>'
-+'<td></td>'
-+'</tr>';
+  +'<td colspan="4"><strong>'+col0+'</strong></td>'
+  +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
+  +'<td class="num"><strong>'+(typeof r[6]==='number'?'$'+r[6].toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</strong></td>'
+  +'<td></td>'
+  +'</tr>';
     } else if(isEntry){
 html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
   +'<td><input class="ce" value="'+fmtD(r[1])+'" style="font-family:var(--mono);font-size:12px"/></td>'
@@ -1211,7 +1212,9 @@ var tot=0,totAmt=0;
       if(inputs[0]){var h=parseFloat(inputs[0].value);if(!isNaN(h))tot+=h;}
       if(inputs[2]){var a=parseFloat(inputs[2].value);if(!isNaN(a))totAmt+=a;}
     });
-var numCell=document.getElementById('ts-num-'+g);
+var hrsCell=document.getElementById('ts-hrs-'+g);
+    if(hrsCell)hrsCell.textContent=tot.toFixed(2);
+    var numCell=document.getElementById('ts-num-'+g);
     if(numCell)numCell.textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
     var subRow=document.getElementById('ts-sub-'+g);
     if(subRow){
