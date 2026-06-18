@@ -1169,10 +1169,11 @@ html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+
       }
       tsSecId++;tsCurrent='ts'+tsSecId;
 html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'
-  +'<td colspan="4"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'
-  +'<td class="num" id="ts-hrs-'+tsCurrent+'">—</td>'
-  +'<td class="num" id="ts-num-'+tsCurrent+'">—</td>'
-  +'<td></td>'
++'<td colspan="3"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'
++'<td class="num" id="ts-hrs-'+tsCurrent+'">—</td>'
++'<td class="num">—</td>'
++'<td class="num" id="ts-num-'+tsCurrent+'">—</td>'
++'<td></td>'
   +'</tr>';
     } else if(isTotal){
       if(tsCurrent){
@@ -1185,10 +1186,11 @@ html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\
         tsCurrent=null;
       }
 html+='<tr class="ts-total-row">'
-  +'<td colspan="4"><strong>'+col0+'</strong></td>'
-  +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-  +'<td class="num" id="ts-grand-amt"><strong>—</strong></td>'
-  +'<td></td>'
++'<td colspan="3"><strong>'+col0+'</strong></td>'
++'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
++'<td class="num">—</td>'
++'<td class="num" id="ts-grand-amt"><strong>—</strong></td>'
++'<td></td>'
   +'</tr>';
     } else if(isEntry){
 html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
