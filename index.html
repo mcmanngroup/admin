@@ -1161,10 +1161,11 @@ var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1
       // emit sub row for previous group before starting new one
       if(tsCurrent){
 html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
-      +'<td colspan="3">Total — </td>'
-      +'<td class="num">—</td>'
-      +'<td class="num">—</td>'
-      +'<td></td>'
++'<td colspan="3">Total — </td>'
++'<td class="num">—</td>'
++'<td class="num"></td>'
++'<td class="num">—</td>'
++'<td></td>'
       +'</tr>';
       }
       tsSecId++;tsCurrent='ts'+tsSecId;
