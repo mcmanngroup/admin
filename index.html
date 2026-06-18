@@ -1118,7 +1118,10 @@ function renderTimesheet(data){
   if(!data['Timesheet']){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">⏱</div><div class="empty-title">No Timesheet data</div></div>';return;}
   var rows=data['Timesheet'];
   var totalH=0;
-  rows.forEach(function(r){if(typeof r[1]==='number'&&typeof r[4]==='number')totalH+=r[4];});
+rows.forEach(function(r){
+  var isEntry=typeof r[1]==='number'||(typeof r[1]==='string'&&/^\d+$/.test((r[1]||'').toString().trim())&&parseFloat(r[1])>40000);
+  if(isEntry&&typeof r[4]==='number')totalH+=r[4];
+});
 
   var html='<div class="kpi-grid" style="grid-template-columns:1fr;max-width:320px">'
     +'<div class="kpi-card blue"><div class="kpi-label">Total Hours Logged</div><div class="kpi-value">'+totalH.toFixed(2)+'</div><div class="kpi-sub">All staff combined</div></div>'
@@ -1173,7 +1176,7 @@ html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\
 html+='<tr class="ts-total-row">'
   +'<td colspan="4"><strong>'+col0+'</strong></td>'
   +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-  +'<td class="num"><strong>'+(typeof r[6]==='number'?'$'+r[6].toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</strong></td>'
++'<td class="num" id="ts-grand-amt"><strong>—</strong></td>'
   +'<td></td>'
   +'</tr>';
     } else if(isEntry){
