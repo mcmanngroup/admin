@@ -875,6 +875,8 @@ function toggleGroup(group){
   var vsSub=document.getElementById('vs-sub-'+group);
   if(vsSub)vsSub.style.display=isOpen?'none':'table-row';
   // timesheet group total (visible when collapsed)
+  var tsHrs=document.getElementById('ts-hrs-'+group);
+  if(tsHrs)tsHrs.style.visibility=isOpen?'visible':'hidden';
   var tsNum=document.getElementById('ts-num-'+group);
   if(tsNum)tsNum.style.visibility=isOpen?'visible':'hidden';
   // vendor group total (visible when collapsed)
@@ -1173,10 +1175,19 @@ html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\
   +'<td></td>'
   +'</tr>';
     } else if(isTotal){
+      if(tsCurrent){
+        html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
+          +'<td colspan="3">Total — </td>'
+          +'<td class="num">—</td>'
+          +'<td class="num">—</td>'
+          +'<td></td>'
+          +'</tr>';
+        tsCurrent=null;
+      }
 html+='<tr class="ts-total-row">'
   +'<td colspan="4"><strong>'+col0+'</strong></td>'
   +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-+'<td class="num" id="ts-grand-amt"><strong>—</strong></td>'
+  +'<td class="num" id="ts-grand-amt"><strong>—</strong></td>'
   +'<td></td>'
   +'</tr>';
     } else if(isEntry){
@@ -1196,6 +1207,8 @@ html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
     html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
       +'<td colspan="3">Total — </td>'
       +'<td class="num">—</td>'
+      +'<td class="num">—</td>'
+      +'<td></td>'
       +'</tr>';
   }
 
@@ -1226,6 +1239,12 @@ var hrsCell=document.getElementById('ts-hrs-'+g);
       if(subRow.cells[2])subRow.cells[2].textContent='$'+totAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
   });
+  var grandAmt=0;
+  document.querySelectorAll('.ts-detail .ce.num').forEach(function(inp,i){
+    if(i%3===2){var a=parseFloat(String(inp.value).replace(/[$,]/g,''));if(!isNaN(a))grandAmt+=a;}
+  });
+  var grandCell=document.getElementById('ts-grand-amt');
+  if(grandCell)grandCell.innerHTML='<strong>$'+grandAmt.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';
 }
 function addTsRow(){
   var tbody=document.getElementById('ts-tbody');if(!tbody)return;
