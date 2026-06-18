@@ -1974,7 +1974,7 @@ function buildDashboardPayload(data){
     var curV2=null;
     (data['Material']||[]).forEach(function(r){
       var c0=r[0],c0s=(c0===null||c0===undefined)?'':s(String(c0));
-      var isBill=(c0===null||c0===undefined||c0s==='')&&r[1]==='Bill';
+  var isBill=(c0===null||c0===undefined||c0s==='')&&(r[1]==='Bill'||r[1]==='Cheque'||r[1]==='Credit'||r[1]==='Credit Card Charge');
       if(['Vendor Detail','PROJECT','CLIENT','DATE / PREP','LINE ITEM'].some(function(x){return c0s.startsWith(x);}))return;
       if(!c0s&&!isBill)return;
       if(c0s.startsWith('Total Vendor')){grandTotal=n(r[5]);return;}
