@@ -1133,11 +1133,14 @@ function renderTimesheet(data){
     +'</div>'
     +'<div class="table-wrap"><table id="ts-table">'
     +'<thead><tr>'
-    +'<th style="width:18%;text-align:left">Date</th>'
-    +'<th style="width:36%;text-align:left">Staff Member</th>'
-    +'<th style="width:36%;text-align:left">Billing Status</th>'
-    +'<th class="r" style="width:10%">Hours</th>'
-    +'</tr></thead>'
++'<th style="width:14%;text-align:left">Date</th>'
++'<th style="width:24%;text-align:left">Staff Member</th>'
++'<th style="width:20%;text-align:left">Billing Status</th>'
++'<th class="r" style="width:8%">Hours</th>'
++'<th class="r" style="width:8%">Rate</th>'
++'<th class="r" style="width:8%">Amount</th>'
++'<th style="width:18%"></th>'
++'</tr></thead>'
     +'<tbody id="ts-tbody">';
 
   var tsSecId=0,tsCurrent=null;
@@ -1152,27 +1155,34 @@ var isGroupTotal=!isGrandTotal&&!isEntry&&col0.toLowerCase().indexOf('total')>-1
     if(isHeader){
       // emit sub row for previous group before starting new one
       if(tsCurrent){
-        html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
-          +'<td colspan="3">Total — </td>'
-          +'<td class="num">—</td>'
-          +'</tr>';
+html+='<tr class="ts-sub-row" id="ts-sub-'+tsCurrent+'" data-group="'+tsCurrent+'">'
+  +'<td colspan="5">Total — </td>'
+  +'<td class="num">—</td>'
+  +'<td></td>'
+  +'</tr>';
       }
       tsSecId++;tsCurrent='ts'+tsSecId;
-      html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'        +'<td colspan="3"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'        +'<td class="num" id="ts-num-'+tsCurrent+'">—</td>'
-        +'</tr>';
+      html+='<tr class="ts-group-row" id="ts-cat-'+tsCurrent+'" onclick="toggleGroup(\''+tsCurrent+'\')">'
+  +'<td colspan="5"><button class="expand-btn" id="btn-'+tsCurrent+'">▶</button><strong>'+col0+'</strong></td>'
+  +'<td class="num" id="ts-num-'+tsCurrent+'">—</td>'
+  +'<td></td>'
+  +'</tr>';
     } else if(isTotal){
-      html+='<tr class="ts-total-row">'
-        +'<td colspan="3"><strong>'+col0+'</strong></td>'
-        +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
-        +'</tr>';
+html+='<tr class="ts-total-row">'
+  +'<td colspan="5"><strong>'+col0+'</strong></td>'
+  +'<td class="num"><strong>'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'</strong></td>'
+  +'<td></td>'
+  +'</tr>';
     } else if(isEntry){
-      html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
-        +'<td><input class="ce" value="'+fmtD(r[1])+'" style="font-family:var(--mono);font-size:12px"/></td>'
-        +'<td class="name"><input class="ce" value="'+(r[2]||'').replace(/"/g,'&quot;')+'"/></td>'
-        +'<td><input class="ce" value="'+(r[3]||'').replace(/"/g,'&quot;')+'"/></td>'
-        +'<td class="num"><input class="ce num" value="'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'"/></td>'
-        +'<td><div class="ra"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>'
-        +'</tr>';
+html+='<tr class="ts-detail" data-group="'+tsCurrent+'">'
+  +'<td><input class="ce" value="'+fmtD(r[1])+'" style="font-family:var(--mono);font-size:12px"/></td>'
+  +'<td class="name"><input class="ce" value="'+(r[2]||'').replace(/"/g,'&quot;')+'"/></td>'
+  +'<td><input class="ce" value="'+(r[3]||'').replace(/"/g,'&quot;')+'"/></td>'
+  +'<td class="num"><input class="ce num" value="'+(typeof r[4]==='number'?r[4].toFixed(2):'—')+'"/></td>'
+  +'<td class="num"><input class="ce num" value="'+(typeof r[5]==='number'?r[5].toFixed(2):'—')+'"/></td>'
+  +'<td class="num"><input class="ce num" value="'+(typeof r[6]==='number'?r[6].toFixed(2):'—')+'"/></td>'
+  +'<td><div class="ra"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>'
+  +'</tr>';
     }
   });
   // emit sub row for last group
@@ -1209,8 +1219,7 @@ if(subRow.cells[1])subRow.cells[1].textContent=tot.toFixed(2);
 function addTsRow(){
   var tbody=document.getElementById('ts-tbody');if(!tbody)return;
   var tr=document.createElement('tr');tr.className='detail-row';
-  tr.innerHTML='<td style="padding-left:28px"><input class="ce" placeholder="YYYY-MM-DD" style="font-family:\'DM Mono\',monospace;font-size:12px;"/></td><td><input class="ce" placeholder="Staff Member"/></td><td><input class="ce" placeholder="Notes"/></td><td class="num"><input class="ce num" placeholder="0.00"/></td><td><div class="ra" style="opacity:1"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>';
-  tbody.appendChild(tr);tr.querySelector('input').focus();showToast('Row added');
+tr.innerHTML='<td style="padding-left:28px"><input class="ce" placeholder="YYYY-MM-DD" style="font-family:\'DM Mono\',monospace;font-size:12px;"/></td><td><input class="ce" placeholder="Staff Member"/></td><td><input class="ce" placeholder="Notes"/></td><td class="num"><input class="ce num" placeholder="0.00"/></td><td class="num"><input class="ce num" placeholder="0.00"/></td><td class="num"><input class="ce num" placeholder="0.00"/></td><td><div class="ra" style="opacity:1"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>';  tbody.appendChild(tr);tr.querySelector('input').focus();showToast('Row added');
 }
 
 function renderMaterials(data){
