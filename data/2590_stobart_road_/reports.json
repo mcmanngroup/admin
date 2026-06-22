@@ -14281,7 +14281,7 @@
       },
       {
         "key": "totInv",
-        "label": "Total ACUUAL  Cost",
+        "label": "TOTAL ACTUAL COST",
         "excelIndex": 4,
         "visible": true
       },
