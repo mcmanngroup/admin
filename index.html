@@ -659,18 +659,31 @@ var _jobsSha=null;
 var _cfgSha=null;
 
 async function save(){
-  if(!activeJobId)return;
+  if(!activeJobId)return false;
   var path='data/'+activeJobId+'/reports.json';
   var ok=await ghPut(path,reports,_reportSha[activeJobId]||null);
   if(ok){
     // refresh sha for next save
     var got=await ghGet(path);
     if(got)_reportSha[activeJobId]=got.sha;
+  } else {
+    // Save failed (likely a stale SHA / 409 conflict). Refetch the latest
+    // sha from GitHub and retry once before giving up.
+    var fresh=await ghGet(path);
+    if(fresh){
+      _reportSha[activeJobId]=fresh.sha;
+      ok=await ghPut(path,reports,fresh.sha);
+      if(ok){
+        var got2=await ghGet(path);
+        if(got2)_reportSha[activeJobId]=got2.sha;
+      }
+    }
   }
   // also save monday config
   var cfgPath='data/config.json';
   var cfgOk=await ghPut(cfgPath,mondayConfig,_cfgSha||null);
   if(cfgOk){var gc=await ghGet(cfgPath);if(gc)_cfgSha=gc.sha;}
+  return ok;
 }
 
 async function loadFromStorage(){
@@ -801,7 +814,7 @@ function detectMonth(fn){
 
 function renderMonthList(){
   var list=document.getElementById('month-list');
-  var keys=Object.keys(reports).sort(function(a,b){return new Date(b)-new Date(a);});
+  var keys=Object.keys(reports).filter(function(k){return k.charAt(0)!=='_';}).sort(function(a,b){return new Date(b)-new Date(a);});
   if(!keys.length){list.innerHTML='<div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div>';return;}
   list.innerHTML=keys.map(function(k){
     var sid=k.replace(/[^a-zA-Z0-9]/g,'_');
@@ -1722,10 +1735,10 @@ function getClientInfo(){
     dateFrom:'',dateTo:'',reportLabel:''
   };
 }
-function saveClientInfoToStorage(obj){
+async function saveClientInfoToStorage(obj){
   if(!reports['_clientInfo'])reports['_clientInfo']={};
   reports['_clientInfo'][activeJobId||'widgeon']=obj;
-  save();
+  return await save();
 }
 
 function renderClientInfo(){
@@ -1788,7 +1801,7 @@ function updateReportLabel(){
   lbl.value=label;
 }
 
-function saveClientInfo(){
+async function saveClientInfo(){
   var ci={
     clientName:document.getElementById('ci-clientName').value.trim(),
     clientEmail:document.getElementById('ci-clientEmail').value.trim(),
@@ -1813,7 +1826,11 @@ function saveClientInfo(){
     jobs[ji].name=ci.projectName||jobs[ji].name;
     saveJobs(jobs);
   }
-  saveClientInfoToStorage(ci);
+  var ok=await saveClientInfoToStorage(ci);
+  if(!ok){
+    showToast('Save failed — check your GitHub connection and try again',true);
+    return;
+  }
   showToast('Client info saved ✓');
   // Auto-sync if GitHub is configured
   if(activeMonth&&reports[activeMonth]){
