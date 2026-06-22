@@ -1555,7 +1555,7 @@ function updateBar(){
   if(!activeMonth||!reports[activeMonth])return;
   var d=reports[activeMonth];
   var upEl=document.getElementById('sync-uploaded');
-  if(upEl)upEl.textContent='Uploaded: '+(d.uploadedAt||'');
+if(upEl)upEl.textContent='Last synced: '+(d.uploadedAt||'');
 }
 function autoDetectDates(data){
   var dates=[];
@@ -1861,7 +1861,8 @@ async function syncToGitHub(){
     if(sha)body.sha=sha;
     var res=await fetch(apiBase,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!res.ok){var err=await res.json();throw new Error(err.message||'GitHub error '+res.status);}
-    if(status){status.textContent='✓ Synced to '+activeJob.repo+' · '+new Date().toLocaleTimeString();status.className='sync-status ok';}
+if(status){status.textContent='✓ Synced to '+activeJob.repo+' · '+new Date().toLocaleTimeString();status.className='sync-status ok';}
+    if(reports[activeMonth]){reports[activeMonth].uploadedAt=new Date().toLocaleString();updateBar();}
     showToast(activeJob.name+' dashboard live in ~30 seconds ✓');
     if(btn){btn.disabled=false;btn.textContent='⬆ Sync to Dashboard';}
   }catch(e){
