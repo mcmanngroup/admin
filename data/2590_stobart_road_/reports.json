@@ -88,7 +88,7 @@
         ""
       ],
       [
-        "   DESIGN SERVICES — Subtotal",
+        "   DESIGN SERVICES â Subtotal",
         18375,
         0,
         9405.23,
@@ -186,7 +186,7 @@
         ""
       ],
       [
-        "   PERMITS & HOME WARRANTY — Subtotal",
+        "   PERMITS & HOME WARRANTY â Subtotal",
         23142,
         0,
         9430,
@@ -284,7 +284,7 @@
         ""
       ],
       [
-        "   ENGINEERING FEES — Subtotal",
+        "   ENGINEERING FEES â Subtotal",
         19425,
         0,
         13529.95,
@@ -368,7 +368,7 @@
         ""
       ],
       [
-        "   SITE WORK — Subtotal",
+        "   SITE WORK â Subtotal",
         68250,
         0,
         51959.5,
@@ -550,7 +550,7 @@
         ""
       ],
       [
-        "   FOUNDATION — Subtotal",
+        "   FOUNDATION â Subtotal",
         87358.614,
         0,
         70137.02,
@@ -662,7 +662,7 @@
         ""
       ],
       [
-        "   FRAMING — Subtotal",
+        "   FRAMING â Subtotal",
         117628.9905,
         0,
         110574.7,
@@ -732,7 +732,7 @@
         ""
       ],
       [
-        "   WINDOWS — Subtotal",
+        "   WINDOWS â Subtotal",
         39173.736,
         0,
         25812.63,
@@ -844,7 +844,7 @@
         ""
       ],
       [
-        "   DOORS — Subtotal",
+        "   DOORS â Subtotal",
         52693.9245,
         0,
         15118.53,
@@ -956,7 +956,7 @@
         ""
       ],
       [
-        "   ELECTRICAL — Subtotal",
+        "   ELECTRICAL â Subtotal",
         75458.25,
         0,
         0,
@@ -1012,7 +1012,7 @@
         ""
       ],
       [
-        "   PLUMBING — Subtotal",
+        "   PLUMBING â Subtotal",
         26250,
         0,
         1422.77,
@@ -1124,7 +1124,7 @@
         ""
       ],
       [
-        "   HVAC — Subtotal",
+        "   HVAC â Subtotal",
         66213,
         0,
         0,
@@ -1180,7 +1180,7 @@
         ""
       ],
       [
-        "   ROOFING — Subtotal",
+        "   ROOFING â Subtotal",
         34545,
         0,
         0,
@@ -1250,7 +1250,7 @@
         ""
       ],
       [
-        "   INSULATION & DRYWALL — Subtotal",
+        "   INSULATION & DRYWALL â Subtotal",
         89461.59599999999,
         0,
         0,
@@ -1376,7 +1376,7 @@
         ""
       ],
       [
-        "   EXTERIOR VENEER — Subtotal",
+        "   EXTERIOR VENEER â Subtotal",
         72763.7505,
         0,
         403.74,
@@ -1432,7 +1432,7 @@
         ""
       ],
       [
-        "   MASONRY — Subtotal",
+        "   MASONRY â Subtotal",
         15750,
         0,
         0,
@@ -1502,7 +1502,7 @@
         ""
       ],
       [
-        "   CABINETRY & COUNTERTOPS — Subtotal",
+        "   CABINETRY & COUNTERTOPS â Subtotal",
         75474,
         0,
         0,
@@ -1628,7 +1628,7 @@
         ""
       ],
       [
-        "   INTERIOR FINISHING — Subtotal",
+        "   INTERIOR FINISHING â Subtotal",
         20238.876,
         0,
         0,
@@ -1740,7 +1740,7 @@
         ""
       ],
       [
-        "   WOOD FLOOR COVERINGS — Subtotal",
+        "   WOOD FLOOR COVERINGS â Subtotal",
         44751,
         0,
         0,
@@ -1950,7 +1950,7 @@
         ""
       ],
       [
-        "   TILE — Subtotal",
+        "   TILE â Subtotal",
         29538.915,
         0,
         0,
@@ -2006,7 +2006,7 @@
         ""
       ],
       [
-        "   PAINT — Subtotal",
+        "   PAINT â Subtotal",
         36750,
         0,
         0,
@@ -2104,7 +2104,7 @@
         ""
       ],
       [
-        "   EXTERIOR HARDSCAPE — Subtotal",
+        "   EXTERIOR HARDSCAPE â Subtotal",
         55650,
         0,
         0,
@@ -2188,7 +2188,7 @@
         ""
       ],
       [
-        "   CONSTRUCTION CLEAN UP — Subtotal",
+        "   CONSTRUCTION CLEAN UP â Subtotal",
         7875,
         0,
         1792,
@@ -2258,7 +2258,7 @@
         ""
       ],
       [
-        "   RENTAL& JOBSITE FACILITIES— Subtotal",
+        "   RENTAL& JOBSITE FACILITIESâ Subtotal",
         4761.75,
         0,
         3025.3300000000004,
@@ -2398,7 +2398,7 @@
         ""
       ],
       [
-        "   MISCELLANEOUS — Subtotal",
+        "   MISCELLANEOUS â Subtotal",
         100275,
         0,
         4450,
@@ -2510,7 +2510,7 @@
         ""
       ],
       [
-        "   Mcmann Labour  — Subtotal",
+        "   Mcmann Labour  â Subtotal",
         44814,
         0,
         0,
@@ -14281,7 +14281,7 @@
       },
       {
         "key": "totInv",
-        "label": "TOTAL INVOICED",
+        "label": "Total ACUUAL  Cost",
         "excelIndex": 4,
         "visible": true
       },
