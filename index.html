@@ -1610,7 +1610,21 @@ function getJobs(){return _jobsCache||[];}
 async function saveJobs(j){
   _jobsCache=j;
   var ok=await ghPut('data/jobs.json',j,_jobsSha||null);
-  if(ok){var got=await ghGet('data/jobs.json');if(got)_jobsSha=got.sha;}
+  if(ok){
+    var got=await ghGet('data/jobs.json');
+    if(got)_jobsSha=got.sha;
+  } else {
+    var fresh=await ghGet('data/jobs.json');
+    if(fresh){
+      _jobsSha=fresh.sha;
+      ok=await ghPut('data/jobs.json',j,fresh.sha);
+      if(ok){
+        var got2=await ghGet('data/jobs.json');
+        if(got2)_jobsSha=got2.sha;
+      }
+    }
+  }
+  return ok;
 }
 function saveGhCfg(g){saveGhCfgLocal(g);}
 
@@ -1678,7 +1692,7 @@ html+='<button class="ji-del" data-id="'+j.id+'" onclick="deleteJob(this.dataset
 }
 function closeJobModal(){document.getElementById('job-modal').classList.remove('show')}
 
-function addJob(){
+async function addJob(){
   var name=document.getElementById('nj-name').value.trim();
   var repo=document.getElementById('nj-repo').value.trim();
   var url=document.getElementById('nj-url').value.trim();
@@ -1688,16 +1702,19 @@ function addJob(){
   var jobs=getJobs();
   if(jobs.find(function(j){return j.id===id})){showToast('Job already exists',true);return;}
   jobs.push({id:id,name:name,repo:repo,url:url,client:client,mondayBoardId:document.getElementById('nj-monday').value.trim()});
-  saveJobs(jobs);
+  var ok=await saveJobs(jobs);
+  if(!ok){showToast('Save failed — check GitHub connection and try again',true);return;}
   populateJobSel(jobs);
   closeJobModal();
   showToast('Job added: '+name);
   ['nj-name','nj-repo','nj-url','nj-client','nj-monday'].forEach(function(i){document.getElementById(i).value='';});
 }
 
-function deleteJob(jobId){
+async function deleteJob(jobId){
   var jobs=getJobs().filter(function(j){return j.id!==jobId});
-  saveJobs(jobs);populateJobSel(jobs);
+  var ok=await saveJobs(jobs);
+  if(!ok){showToast('Delete failed — check GitHub connection and try again',true);return;}
+  populateJobSel(jobs);
   if(activeJobId===jobId&&jobs.length)switchJob(jobs[0].id);
   openJobModal();showToast('Job removed');
 }
@@ -2091,7 +2108,7 @@ function editJob(jobId){
   addBtn.textContent='Save Changes';
   addBtn.onclick=function(){saveEditJob(jobId);};
 }
-function saveEditJob(jobId){
+async function saveEditJob(jobId){
   var jobs=getJobs();
   var ji=jobs.findIndex(function(j){return j.id===jobId;});
   if(ji<0)return;
@@ -2100,7 +2117,8 @@ function saveEditJob(jobId){
   jobs[ji].url=document.getElementById('nj-url').value.trim()||jobs[ji].url;
   jobs[ji].client=document.getElementById('nj-client').value.trim()||jobs[ji].client;
   jobs[ji].mondayBoardId=document.getElementById('nj-monday').value.trim();
-  saveJobs(jobs);
+  var ok=await saveJobs(jobs);
+  if(!ok){showToast('Save failed — check GitHub connection and try again',true);return;}
   populateJobSel(jobs);
   if(activeJobId===jobId){activeJob=jobs[ji];}
   var addBtn=document.querySelector('#job-modal .jmbtn.prim');
