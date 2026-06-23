@@ -738,7 +738,10 @@ function handleUpload(e){
       // Build column schema from actual Cost Breakdown headers
       data._colSchema=buildColSchema(data['Cost Breakdown']||[]);
       var key=detectMonth(file.name);
-      reports[key]=data;save();renderMonthList();selectMonth(key);showToast('Saved: '+key);
+reports[key]=data;
+var _allKeys=Object.keys(reports).filter(function(k){return k.charAt(0)!=='_';}).sort(function(a,b){return new Date(b)-new Date(a);});
+_allKeys.slice(6).forEach(function(oldKey){if(reports[oldKey])delete reports[oldKey]._cbRowColors;});
+save();renderMonthList();selectMonth(key);showToast('Saved: '+key);
     }catch(err){showToast('Error: '+err.message,true);}
   };
   reader.readAsBinaryString(file);e.target.value='';
