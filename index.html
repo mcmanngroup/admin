@@ -545,7 +545,9 @@ tr:hover .ra{opacity:1;}
       <div class="tab" onclick="switchTab('materials',this)">Vendors</div>
       <div class="tab" onclick="switchTab('schedule',this)">Schedule</div>
       <div class="tab" onclick="switchTab('calendar',this)">Calendar</div>
-      <div class="tab" onclick="switchTab('clientinfo',this)">Client / Project Info</div>
+<div class="tab" onclick="switchTab('clientinfo',this)">Client / Project Info</div>
+      <div class="tab" onclick="openClientDashboardTab()">🔗 Open Client Dashboard</div>
+      
     </div>
   </div>
 
@@ -843,7 +845,11 @@ function confirmDelete(){if(!deleteTarget)return;delete reports[deleteTarget];sa
 function showEmpty(){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Select a month from the sidebar.</div></div>';}
 
 function switchTab(tab,el){activeTab=tab;document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');renderContent();}
-
+function openClientDashboardTab(){
+  if(!activeJob||!activeJob.url){showToast('No dashboard URL set for this job — add one under + Job → Edit',true);return;}
+  var href=activeJob.url.indexOf('http')===0?activeJob.url:'https://'+activeJob.url;
+  window.open(href,'_blank');
+}
 function renderContent(){
   if(activeTab==='schedule'){renderSchedule();return;}
   if(activeTab==='calendar'){renderCalendarTab();return;}
@@ -1753,8 +1759,7 @@ function getClientInfo(){
     clientEmail:'',clientPhone:'',
     projectName:activeJob?activeJob.name||'':'',
     projectAddress:'',projectManager:'A. McMann',
-    dateFrom:'',dateTo:'',reportLabel:''
-  };
+dateFrom:'',dateTo:'',reportLabel:'',dashboardUrl:activeJob?activeJob.url||'':''  };
 }
 async function saveClientInfoToStorage(obj){
   if(!reports['_clientInfo'])reports['_clientInfo']={};
@@ -1782,6 +1787,13 @@ function renderClientInfo(){
   +'<div><label class="ci-lbl">Project Name</label><input class="ci-input" id="ci-projectName" value="'+((ci.projectName||'').replace(/"/g,'&quot;'))+'" placeholder="e.g. 2125 Widgeon Rd"/></div>'
   +'<div><label class="ci-lbl">Project Address</label><input class="ci-input" id="ci-projectAddress" value="'+((ci.projectAddress||'').replace(/"/g,'&quot;'))+'" placeholder="e.g. 2125 Widgeon Road, Nanaimo BC"/></div>'
   +'<div><label class="ci-lbl">Project Manager</label><input class="ci-input" id="ci-projectManager" value="'+((ci.projectManager||'').replace(/"/g,'&quot;'))+'" placeholder="e.g. A. McMann"/></div>'
++'</div></div>'
+
+  // Client Dashboard Link card
+  +'<div class="section-card" style="margin-bottom:14px">'
+  +'<div class="section-head"><div><h2>Client Dashboard Link</h2><p>Opened by the "Open Client Dashboard" tab</p></div></div>'
+  +'<div style="padding:18px 20px">'
+  +'<label class="ci-lbl">Dashboard URL</label><input class="ci-input" id="ci-dashboardUrl" value="'+((ci.dashboardUrl||(activeJob&&activeJob.url)||'').replace(/"/g,'&quot;'))+'" placeholder="e.g. mmg-widgeon.mcmanngroup.com" style="max-width:420px"/>'
   +'</div></div>'
 
   // Report Period card
@@ -1832,19 +1844,22 @@ async function saveClientInfo(){
     projectManager:document.getElementById('ci-projectManager').value.trim(),
     dateFrom:document.getElementById('ci-dateFrom').value,
     dateTo:document.getElementById('ci-dateTo').value,
-    reportLabel:document.getElementById('ci-reportLabel').value
+reportLabel:document.getElementById('ci-reportLabel').value,
+    dashboardUrl:document.getElementById('ci-dashboardUrl').value.trim()
   };
   // Update activeJob so sync uses the new values immediately
   if(activeJob){
     activeJob.client=ci.clientName||activeJob.client;
-    activeJob.name=ci.projectName||activeJob.name;
+activeJob.name=ci.projectName||activeJob.name;
+    activeJob.url=ci.dashboardUrl||activeJob.url;
   }
   // Update the job in the jobs list too
   var jobs=getJobs();
   var ji=jobs.findIndex(function(j){return j.id===activeJobId;});
   if(ji>-1){
-    jobs[ji].client=ci.clientName||jobs[ji].client;
+jobs[ji].client=ci.clientName||jobs[ji].client;
     jobs[ji].name=ci.projectName||jobs[ji].name;
+    jobs[ji].url=ci.dashboardUrl||jobs[ji].url;
     saveJobs(jobs);
   }
   var ok=await saveClientInfoToStorage(ci);
