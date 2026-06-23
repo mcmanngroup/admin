@@ -4721,5 +4721,18 @@
         "timeline": "2026-12-29 - 2026-12-29"
       }
     ]
+  },
+  "_clientInfo": {
+    "2565_east_wellington_road": {
+      "clientName": "Jesse & Heather Dorman",
+      "clientEmail": "",
+      "clientPhone": "",
+      "projectName": "2565 East Wellington Road",
+      "projectAddress": "",
+      "projectManager": "A. McMann",
+      "dateFrom": "2026-01-01",
+      "dateTo": "2026-06-30",
+      "reportLabel": "January 1, 2026 – June 30, 2026"
+    }
   }
 }
