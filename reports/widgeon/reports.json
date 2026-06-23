@@ -5922,7 +5922,8 @@
       "projectManager": "A. McMann",
       "dateFrom": "2025-05-01",
       "dateTo": "2026-05-31",
-      "reportLabel": "May 1, 2025 – May 31, 2026"
+      "reportLabel": "May 1, 2025 – May 31, 2026",
+      "dashboardUrl": "http://widgeon.mcmanngroup.com/"
     }
   }
 }
