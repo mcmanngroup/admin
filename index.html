@@ -1667,7 +1667,8 @@ function openJobModal(){
     jobs.forEach(function(j){
       html+='<div class="job-item-row">';
       html+='<div><div class="ji-name">'+j.name+'</div>';
-      html+='<div class="ji-repo">github: '+j.repo+' · '+j.url+'</div></div>';
+      var urlHref=j.url?(j.url.indexOf('http')===0?j.url:'https://'+j.url):'';
+      html+='<div class="ji-repo">github: '+j.repo+(urlHref?' · <a href="'+urlHref+'" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:underline" onclick="event.stopPropagation()">'+j.url+'</a>':' · <span style="color:var(--gray4)">no link set</span>')+'</div></div>';
 html+='<button class="ji-edit" data-id="'+j.id+'" onclick="editJob(this.dataset.id)" style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--blue);background:rgba(30,111,217,.08);border:1px solid rgba(30,111,217,.2);padding:3px 7px;border-radius:3px;cursor:pointer;margin-right:4px">✎ Edit</button>';
 html+='<button class="ji-del" data-id="'+j.id+'" onclick="deleteJob(this.dataset.id)">✕</button>';      html+='</div>';
     });
