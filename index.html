@@ -430,14 +430,19 @@ tr:hover .ra{opacity:1;}
 .cal-dow-grid{display:grid;grid-template-columns:repeat(7,1fr);background:var(--navy);padding:2px 0;}
 .cal-dow-cell{text-align:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:rgba(255,255,255,.5);padding:9px 2px;letter-spacing:.5px;}
 .cal-days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;}
+.cal-week-wrap{position:relative;}
+.cal-bar{position:absolute;height:16px;font-size:10px;font-weight:500;color:#fff;padding:1px 6px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-sizing:border-box;}
+.cal-legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);}
+.cal-legend-item{display:flex;align-items:center;gap:6px;}
+.cal-legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
 .cal-day{min-height:76px;padding:7px 8px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fff;}
 .cal-day:nth-child(7n){border-right:none;}
 .cal-day.other-month{background:#f8faff;opacity:.5;}
-.cal-day.today-cell{background:#eff6ff;border-top:3px solid var(--blue);}
+.cal-day.today-cell{background:#fff;border-top:none;}
 .cal-day.has-tasks{cursor:pointer;}
 .cal-day.has-tasks:hover{background:var(--blue-pale);}
-.cal-day-num{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:4px;}
-.today-cell .cal-day-num{background:var(--blue);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.cal-day-num{font-size:13px;font-weight:700;color:#000;margin-bottom:4px;text-align:right;}
+.today-cell .cal-day-num{background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-left:auto;margin-bottom:4px;}
 .task-pip{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cal-popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:var(--radius);box-shadow:0 8px 40px rgba(10,22,40,.25);border:1px solid var(--border);width:340px;z-index:500;overflow:hidden;}
 .cal-popup.open{display:block;}
@@ -1445,34 +1450,173 @@ function buildCalendarHTML(){
 }
 
 var _MOS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var GROUP_COLORS={'Pre-Construction':'#6b7280','Excavation':'#f0a55a','Foundation':'#1e8e5a','Framing':'#8a5a3a','Windows & Doors':'#4a90d9','Electrical':'#6c63d6','Plumbing':'#d6437a','HVAC/Mechanical':'#8bc34a','Insulation & Drywall':'#0f6e56','Roofing':'#d8602f','Exterior Veneer':'#9b59b6','Cabinetry & Countertops':'#e8a23a','Interior Finishing':'#5a8a8a','Tile':'#3aa6a0','Wood Floor Coverings':'#a0763a','Paint':'#c0566e','Masonry':'#7a7a52','Exterior Hardscape':'#5a8a3a','Construction Clean Up':'#999','Jobsite Facilities':'#777'};
+function groupColor(g){return GROUP_COLORS[g]||'#888780';}
+
 function renderCalendar(){
-  var its=_calItems||[],yr=_calYear,mo=_calMonth,dm={},td=new Date();td.setHours(0,0,0,0);
+  var its=_calItems||[],yr=_calYear,mo=_calMonth,td=new Date();td.setHours(0,0,0,0);
   var lbl=document.getElementById('cal-month-label');if(lbl)lbl.textContent=_MOS[mo]+' '+yr;
-  its.forEach(function(it){if(!it.timeline)return;var p=it.timeline.split(' - '),d=new Date(p[0]);if(isNaN(d)||d.getFullYear()!==yr||d.getMonth()!==mo)return;if(!dm[p[0]])dm[p[0]]=[];dm[p[0]].push(it);});
-  var fd=new Date(yr,mo,1).getDay(),dim=new Date(yr,mo+1,0).getDate(),pd=new Date(yr,mo,0).getDate(),h='',cc=0;
-  for(var i=fd-1;i>=0;i--){h+='<div class="cal-day other-month"><div class="cal-day-num">'+(pd-i)+'</div></div>';cc++;}
+  var monthStart=new Date(yr,mo,1),monthEnd=new Date(yr,mo+1,0);
+  var fd=monthStart.getDay(),dim=monthEnd.getDate(),pd=new Date(yr,mo,0).getDate();
+  var totalCells=fd+dim,totalRows=Math.ceil(totalCells/7);
+  var gridStart=new Date(yr,mo,1-fd);
+
+  var ranges=[];
+  its.forEach(function(it){
+    if(!it.timeline)return;
+    var p=it.timeline.split(' - ');
+    var s=new Date(p[0]+'T00:00:00'),e=new Date((p[1]||p[0])+'T00:00:00');
+    if(isNaN(s))return;
+    if(isNaN(e)||e<s)e=s;
+    ranges.push({item:it,start:s,end:e});
+  });
+
+  var dayCellsHtml='',cc=0;
+  for(var i=fd-1;i>=0;i--){dayCellsHtml+='<div class="cal-day other-month"><div class="cal-day-num">'+(pd-i)+'</div></div>';cc++;}
   for(var d2=1;d2<=dim;d2++){
-    var mm=String(mo+1).padStart(2,'0'),dd2=String(d2).padStart(2,'0'),k=yr+'-'+mm+'-'+dd2;
-    var ts2=dm[k]||[],isT=(new Date(yr,mo,d2).getTime()===td.getTime()),pips='';
-    var cl='cal-day'+(isT?' today-cell':'')+(ts2.length?' has-tasks':'');
-    ts2.slice(0,2).forEach(function(t){var s=(t.status||'').toLowerCase(),bg=s==='done'?'#d1fae5':'#dbeafe',co2=s==='done'?'#065f46':'#1e40af',lb=t.name.length>16?t.name.slice(0,14)+'...':t.name;pips+='<div class="task-pip" style="background:'+bg+';color:'+co2+';">'+lb+'</div>';});
-    if(ts2.length>2)pips+='<div class="task-pip" style="background:#f1f5f9;color:#475569;">+'+(ts2.length-2)+' more</div>';
-    var oc=ts2.length?' onclick="openCalPopup(this)" data-key="'+k+'" data-day="'+d2+'"':'';
-    h+='<div class="'+cl+'"'+oc+'><div class="cal-day-num">'+d2+'</div>'+pips+'</div>';cc++;
+    var thisDate=new Date(yr,mo,d2);
+    var isT=(thisDate.getTime()===td.getTime());
+    var dayKey=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+    var hasTask=ranges.some(function(r){return thisDate>=r.start&&thisDate<=r.end;});
+    var oc=hasTask?' onclick="openCalPopup(this)" data-key="'+dayKey+'"':'';
+    dayCellsHtml+='<div class="cal-day'+(isT?' today-cell':'')+(hasTask?' has-tasks':'')+'"'+oc+'><div class="cal-day-num">'+d2+'</div></div>';
+    cc++;
   }
-  var tr2=(7-(cc%7))%7;for(var t2=1;t2<=tr2;t2++)h+='<div class="cal-day other-month"><div class="cal-day-num">'+t2+'</div></div>';
-  var g=document.getElementById('cal-days-grid');if(g)g.innerHTML=h;closeCalPopup();
+  var tr2=(7-(cc%7))%7;
+  for(var t2=1;t2<=tr2;t2++){dayCellsHtml+='<div class="cal-day other-month"><div class="cal-day-num">'+t2+'</div></div>';cc++;}
+
+  var rowsData=[];
+  for(var row=0;row<totalRows;row++){
+    var rowStart=new Date(gridStart);rowStart.setDate(gridStart.getDate()+row*7);
+    var rowEnd=new Date(rowStart);rowEnd.setDate(rowStart.getDate()+6);
+    var rowRanges=ranges.filter(function(r){return r.end>=rowStart&&r.start<=rowEnd;});
+    rowRanges.sort(function(a,b){return a.start-b.start||(b.end-b.start)-(a.end-a.start);});
+    var laneEnds=[];
+    var segments=[];
+    rowRanges.forEach(function(r){
+      var colStart=Math.max(0,Math.round((r.start-rowStart)/86400000));
+      var colEnd=Math.min(6,Math.round((r.end-rowStart)/86400000));
+      var lane=0;
+      while(laneEnds[lane]!==undefined&&laneEnds[lane]>=colStart)lane++;
+      laneEnds[lane]=colEnd;
+      segments.push({item:r.item,row:row,colStart:colStart,colEnd:colEnd,lane:lane});
+    });
+    rowsData.push({lanes:laneEnds.length,segments:segments});
+  }
+
+  var g=document.getElementById('cal-days-grid');
+  if(g){
+    g.innerHTML='';
+    g.style.position='relative';
+    g.style.display='block';
+    var dayWrap=document.createElement('div');
+    dayWrap.style.display='grid';
+    dayWrap.style.gridTemplateColumns='repeat(7,1fr)';
+    dayWrap.innerHTML=dayCellsHtml;
+    g.appendChild(dayWrap);
+
+    var overlay=document.createElement('div');
+    overlay.style.position='absolute';
+    overlay.style.left='0';overlay.style.top='0';overlay.style.width='100%';overlay.style.height='100%';
+    overlay.style.pointerEvents='none';
+    g.appendChild(overlay);
+
+    var dayCellEls=dayWrap.children;
+    var gridRect=g.getBoundingClientRect();
+
+    for(var row3=0;row3<totalRows;row3++){
+      var firstCellIdx=row3*7;
+      var firstCell=dayCellEls[firstCellIdx];
+      if(!firstCell)continue;
+      var numEl=firstCell.querySelector('.cal-day-num');
+      var cellRect=firstCell.getBoundingClientRect();
+      var numRect=numEl?numEl.getBoundingClientRect():cellRect;
+      var rowTopPx=cellRect.top-gridRect.top;
+      var barsStartPx=(numRect.bottom-gridRect.top)+4;
+      var neededLanes=rowsData[row3]?rowsData[row3].lanes:0;
+      if(neededLanes>0){
+        var neededHeight=(barsStartPx-rowTopPx)+neededLanes*19+6;
+        for(var c=0;c<7;c++){
+          var cellEl=dayCellEls[firstCellIdx+c];
+          if(cellEl)cellEl.style.minHeight=Math.max(76,neededHeight)+'px';
+        }
+      }
+    }
+
+    gridRect=g.getBoundingClientRect();
+    rowsData.forEach(function(rd){
+      rd.segments.forEach(function(seg){
+        var firstCellIdx=seg.row*7;
+        var firstCell=dayCellEls[firstCellIdx];
+        if(!firstCell)return;
+        var numEl=firstCell.querySelector('.cal-day-num');
+        var cellRect=firstCell.getBoundingClientRect();
+        var numRect=numEl?numEl.getBoundingClientRect():cellRect;
+        var topPx=(numRect.bottom-gridRect.top)+4+seg.lane*19;
+        var bar=document.createElement('div');
+        bar.className='cal-bar';
+        bar.style.left='calc('+(seg.colStart/7*100)+'%)';
+        bar.style.width='calc('+((seg.colEnd-seg.colStart+1)/7*100)+'%)';
+        bar.style.top=topPx+'px';
+        bar.style.background=groupColor(seg.item.group);
+        bar.title=seg.item.name;
+        bar.textContent=seg.item.name;
+        bar.style.pointerEvents='auto';
+        bar.onclick=(function(it){return function(){openCalPopupForItem(it);};})(seg.item);
+        overlay.appendChild(bar);
+      });
+    });
+  }
+  renderCalLegend(ranges,yr,mo);
+  closeCalPopup();
 }
+
+function renderCalLegend(ranges,yr,mo){
+  var monthStart=new Date(yr,mo,1);
+  var monthEnd=new Date(yr,mo+1,0);
+  var seen={};
+  ranges.forEach(function(r){
+    if(r.end<monthStart||r.start>monthEnd)return;
+    seen[r.item.group]=true;
+  });
+  var groups=Object.keys(seen);
+  var card=document.querySelector('#main-content .cal-card');
+  if(!card)return;
+  var existing=card.querySelector('.cal-legend');
+  if(existing)existing.remove();
+  if(!groups.length)return;
+  var lg=document.createElement('div');
+  lg.className='cal-legend';
+  groups.forEach(function(g){
+    lg.innerHTML+='<div class="cal-legend-item"><div class="cal-legend-dot" style="background:'+groupColor(g)+'"></div>'+g+'</div>';
+  });
+  card.appendChild(lg);
+}
+
 function calNav(dir){_calMonth+=dir;if(_calMonth>11){_calMonth=0;_calYear++;}if(_calMonth<0){_calMonth=11;_calYear--;}renderCalendar();}
+
 function openCalPopup(el){
-  var k=el.dataset.key,dayNum=el.dataset.day,its=_calItems||[];
-  var ts=its.filter(function(it){return it.timeline&&it.timeline.split(' - ')[0]===k;});
+  var k=el.dataset.key,its=_calItems||[];
+  var dt=new Date(k+'T00:00:00');
+  var ts=its.filter(function(it){
+    if(!it.timeline)return false;
+    var p=it.timeline.split(' - ');
+    var s=new Date(p[0]+'T00:00:00'),e=new Date((p[1]||p[0])+'T00:00:00');
+    return dt>=s&&dt<=e;
+  });
   if(!ts.length)return;
-  var te=document.getElementById('cal-popup-title');if(te)te.textContent=_MOS[_calMonth]+' '+dayNum+', '+_calYear+' — '+ts.length+' task'+(ts.length>1?'s':'');
+  var te=document.getElementById('cal-popup-title');if(te)te.textContent=_MOS[dt.getMonth()]+' '+dt.getDate()+', '+dt.getFullYear()+' — '+ts.length+' task'+(ts.length>1?'s':'');
   var bd=document.getElementById('cal-popup-body');
-  if(bd){var h='';ts.forEach(function(t){var s=(t.status||'').toLowerCase(),bg=s==='done'?'#d1fae5':s.indexOf('progress')>-1?'#dbeafe':'#f1f5f9',co2=s==='done'?'#065f46':s.indexOf('progress')>-1?'#1e40af':'#475569';h+='<div class="cal-popup-item"><div style="flex:1"><div class="cal-popup-name">'+t.name+'</div><div class="cal-popup-phase">'+t.group+'</div></div><span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:99px;background:'+bg+';color:'+co2+';">'+(t.status||'Scheduled')+'</span></div>';});bd.innerHTML=h;}
+  if(bd){var h='';ts.forEach(function(t){var color=groupColor(t.group);h+='<div class="cal-popup-item"><div style="flex:1"><div class="cal-popup-name">'+t.name+'</div><div class="cal-popup-phase">'+t.group+'</div></div><span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:99px;background:'+color+'22;color:'+color+';">'+(t.status||'Scheduled')+'</span></div>';});bd.innerHTML=h;}
   var pp=document.getElementById('cal-popup');if(pp)pp.classList.add('open');
 }
+
+function openCalPopupForItem(item){
+  if(!item.timeline)return;
+  var startStr=item.timeline.split(' - ')[0];
+  openCalPopup({dataset:{key:startStr}});
+}
+
 function closeCalPopup(){var pp=document.getElementById('cal-popup');if(pp)pp.classList.remove('open');}
 
 async function connectMonday(){
