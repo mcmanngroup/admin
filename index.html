@@ -660,7 +660,7 @@ var _cfgSha=null;
 
 async function save(){
   if(!activeJobId)return false;
-  var path='data/'+activeJobId+'/reports.json';
+var path='reports/'+activeJobId+'/reports.json';
   var ok=await ghPut(path,reports,_reportSha[activeJobId]||null);
   if(ok){
     // refresh sha for next save
@@ -695,7 +695,7 @@ async function loadFromStorage(){
     try{var m=localStorage.getItem('mcmann_m8');if(m)mondayConfig=JSON.parse(m);}catch(e){mondayConfig={};}
     return;
   }
-  var rpt=await ghGet('data/'+jid+'/reports.json');
+var rpt=await ghGet('reports/'+jid+'/reports.json');
   if(rpt){reports=rpt.data;_reportSha[jid]=rpt.sha;}else{reports={};}
   var cfg=await ghGet('data/config.json');
   if(cfg){mondayConfig=cfg.data;_cfgSha=cfg.sha;}else{mondayConfig={};}
