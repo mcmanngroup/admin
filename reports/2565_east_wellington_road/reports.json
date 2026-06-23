@@ -4732,7 +4732,8 @@
       "projectManager": "A. McMann",
       "dateFrom": "2026-01-01",
       "dateTo": "2026-06-30",
-      "reportLabel": "January 1, 2026 – June 30, 2026"
+      "reportLabel": "January 1, 2026 – June 30, 2026",
+      "dashboardUrl": "http://dorman.mcmanngroup.com/"
     }
   }
 }
