@@ -14304,5 +14304,19 @@
         "visible": true
       }
     ]
+  },
+  "_clientInfo": {
+    "2590_stobart_road_": {
+      "clientName": "Russell & Rachelle Mcmann",
+      "clientEmail": "",
+      "clientPhone": "",
+      "projectName": "2590 Stobart Road",
+      "projectAddress": "",
+      "projectManager": "A. McMann",
+      "dateFrom": "",
+      "dateTo": "",
+      "reportLabel": "",
+      "dashboardUrl": "http://russrachellemcmann.mcmanngroup.com/"
+    }
   }
 }
