@@ -8,8 +8,8 @@
       "projectAddress": "",
       "projectManager": "A. McMann",
       "dateFrom": "2025-05-01",
-      "dateTo": "2026-05-31",
-      "reportLabel": "May 1, 2025 – May 31, 2026",
+      "dateTo": "2026-06-30",
+      "reportLabel": "May 1, 2025 – June 30, 2026",
       "dashboardUrl": "http://widgeon.mcmanngroup.com/"
     }
   },
@@ -955,7 +955,7 @@
   },
   "June 2026": {
     "filename": "Widgeon_June_2026.xlsx.xlsx",
-    "uploadedAt": "7/20/2026, 3:36:27 PM",
+    "uploadedAt": "7/20/2026, 3:40:52 PM",
     "Cost Breakdown": [
       [
         "",
