@@ -5998,7 +5998,7 @@
         "name": "Septic Field Install",
         "group": "Excavation",
         "status": "",
-        "timeline": "2026-07-08 - 2026-07-09"
+        "timeline": "2026-07-31 - 2026-08-01"
       },
       {
         "name": "Complete Footings Material Take Offs & Order Materials",
@@ -6111,7 +6111,7 @@
       {
         "name": "Plumbing Underslab",
         "group": "Foundation",
-        "status": "Working on it",
+        "status": "Done",
         "timeline": "2026-06-12 - 2026-06-12"
       },
       {
@@ -6141,7 +6141,7 @@
       {
         "name": "Slab Prep",
         "group": "Foundation",
-        "status": "Working on it",
+        "status": "Done",
         "timeline": "2026-06-15 - 2026-06-15"
       },
       {
@@ -6165,31 +6165,31 @@
       {
         "name": "Order Any Required Engineering Components",
         "group": "Framing",
-        "status": "",
+        "status": "Done",
         "timeline": ""
       },
       {
         "name": "Order Crawl Space Framing Package",
         "group": "Framing",
-        "status": "",
+        "status": "Done",
         "timeline": "2026-06-24 - 2026-06-24"
       },
       {
         "name": "Crawl Space Framing Labour",
         "group": "Framing",
-        "status": "",
+        "status": "Done",
         "timeline": "2026-06-29 - 2026-06-30"
       },
       {
         "name": "Order Main Floor Framing Package",
         "group": "Framing",
-        "status": "",
+        "status": "Done",
         "timeline": "2026-06-24 - 2026-06-24"
       },
       {
         "name": "Main Floor Framing Labour",
         "group": "Framing",
-        "status": "",
+        "status": "Working on it",
         "timeline": "2026-07-01 - 2026-07-15"
       },
       {
@@ -6208,79 +6208,79 @@
         "name": "Second Floor Framing Labour",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-07-16 - 2026-07-19"
+        "timeline": "2026-07-16 - 2026-07-21"
       },
       {
         "name": "Schedule Roof Truss & Floor System Delivery",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-07-20 - 2026-07-20"
+        "timeline": "2026-07-22 - 2026-07-22"
       },
       {
         "name": "Roof System Labour",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-07-20 - 2026-07-27"
+        "timeline": "2026-07-24 - 2026-07-31"
       },
       {
         "name": "McMann Group Framing & Rough Ins Inspection",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-08-19 - 2026-08-19"
       },
       {
         "name": "Schedule Engineer Framing Field Review",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-07-28 - 2026-07-28"
+        "timeline": "2026-08-01 - 2026-08-01"
       },
       {
         "name": "Book Framing Inspection",
         "group": "Framing",
         "status": "",
-        "timeline": "2026-08-15 - 2026-08-15"
+        "timeline": "2026-08-19 - 2026-08-19"
       },
       {
         "name": "Order Skylights",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-28 - 2026-07-28"
+        "timeline": "2026-08-01 - 2026-08-01"
       },
       {
         "name": "Order Windows",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-06 - 2026-07-06"
+        "timeline": "2026-07-15 - 2026-07-15"
       },
       {
         "name": "Install Windows",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-30 - 2026-07-30"
+        "timeline": "2026-08-01 - 2026-08-01"
       },
       {
         "name": "Order & Schedule Exterior Doors Delivery",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-07 - 2026-07-07"
+        "timeline": "2026-07-15 - 2026-07-15"
       },
       {
         "name": "Install Exterior Doors",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-31 - 2026-07-31"
+        "timeline": "2026-08-02 - 2026-08-02"
       },
       {
         "name": "Order Garage Doors",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-03 - 2026-07-03"
+        "timeline": "2026-07-17 - 2026-07-17"
       },
       {
         "name": "Schedule Garage Door Installation",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-09-11 - 2026-09-11"
+        "timeline": "2026-09-12 - 2026-09-12"
       },
       {
         "name": "Install Garage Doors",
@@ -6292,7 +6292,7 @@
         "name": "Order & Schedule Interior Doors Delivery",
         "group": "Windows & Doors",
         "status": "",
-        "timeline": "2026-07-13 - 2026-07-13"
+        "timeline": "2026-07-31 - 2026-07-31"
       },
       {
         "name": "Install Interior Doors",
@@ -6310,25 +6310,25 @@
         "name": "Schedule Walkthrough with Clients to Confirm Location of Plugs, Lights, Switches",
         "group": "Electrical",
         "status": "",
-        "timeline": "2026-07-21 - 2026-07-21"
+        "timeline": "2026-08-05 - 2026-08-05"
       },
       {
         "name": "Schedule Electrical Rough In",
         "group": "Electrical",
         "status": "",
-        "timeline": "2026-07-28 - 2026-07-28"
+        "timeline": "2026-08-01 - 2026-08-01"
       },
       {
         "name": "Electrical Rough In",
         "group": "Electrical",
         "status": "",
-        "timeline": "2026-08-07 - 2026-08-14"
+        "timeline": "2026-08-11 - 2026-08-18"
       },
       {
         "name": "Select Light Fixtures with Clients & Order",
         "group": "Electrical",
         "status": "",
-        "timeline": "2026-08-15 - 2026-08-15"
+        "timeline": "2026-08-19 - 2026-08-19"
       },
       {
         "name": "Schedule Electrical Finish",
@@ -6364,25 +6364,25 @@
         "name": "Schedule Plumbing Rough In",
         "group": "Plumbing",
         "status": "",
-        "timeline": "2026-07-22 - 2026-07-22"
+        "timeline": "2026-07-29 - 2026-07-29"
       },
       {
         "name": "Plumbing Rough In",
         "group": "Plumbing",
         "status": "",
-        "timeline": "2026-07-28 - 2026-08-01"
+        "timeline": "2026-08-01 - 2026-08-05"
       },
       {
         "name": "Book Plumbing Rough In Inspection",
         "group": "Plumbing",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-08-06 - 2026-08-06"
       },
       {
         "name": "Plumbing Rough In Inspection",
         "group": "Plumbing",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-08-06 - 2026-08-06"
       },
       {
         "name": "Water Treatment System",
@@ -6412,19 +6412,19 @@
         "name": "Schedule Mechanical Rough In",
         "group": "HVAC/Mechanical",
         "status": "",
-        "timeline": "2026-07-23 - 2026-07-23"
+        "timeline": "2026-08-01 - 2026-08-01"
       },
       {
         "name": "Mechanical Rough In",
         "group": "HVAC/Mechanical",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-06"
+        "timeline": "2026-08-06 - 2026-08-10"
       },
       {
         "name": "Install Fireplace",
         "group": "HVAC/Mechanical",
         "status": "",
-        "timeline": "2026-09-11 - 2026-09-11"
+        "timeline": "2026-09-12 - 2026-09-12"
       },
       {
         "name": "Schedule Mechanical Finish",
@@ -6466,13 +6466,13 @@
         "name": "Schedule Insulation & Vapour Barrier Install",
         "group": "Insulation & Drywall",
         "status": "",
-        "timeline": "2026-07-21 - 2026-07-21"
+        "timeline": "2026-08-17 - 2026-08-17"
       },
       {
         "name": "Insulation & Vapour Barrier Install",
         "group": "Insulation & Drywall",
         "status": "",
-        "timeline": "2026-08-23 - 2026-08-25"
+        "timeline": "2026-08-23 - 2026-08-26"
       },
       {
         "name": "Book Insulation & Vapour Barrier Inspection",
@@ -6490,13 +6490,13 @@
         "name": "Drywall Install",
         "group": "Insulation & Drywall",
         "status": "",
-        "timeline": "2026-08-26 - 2026-09-10"
+        "timeline": "2026-08-27 - 2026-09-11"
       },
       {
         "name": "McMann Group Drywall Inspection",
         "group": "Insulation & Drywall",
         "status": "",
-        "timeline": "2026-09-11 - 2026-09-11"
+        "timeline": "2026-09-12 - 2026-09-12"
       },
       {
         "name": "Have Clients Select Roofing",
@@ -6508,13 +6508,13 @@
         "name": "Schedule Roofers",
         "group": "Roofing",
         "status": "",
-        "timeline": "2026-07-21 - 2026-07-21"
+        "timeline": "2026-07-29 - 2026-07-29"
       },
       {
         "name": "Roofing Install",
         "group": "Roofing",
         "status": "",
-        "timeline": "2026-07-28 - 2026-08-01"
+        "timeline": "2026-08-01 - 2026-08-05"
       },
       {
         "name": "Confirm Stone Selection with Clients",
@@ -6532,13 +6532,13 @@
         "name": "Building Paper & Rainscreen Install",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-24 - 2026-08-26"
+        "timeline": "2026-09-03 - 2026-09-05"
       },
       {
         "name": "McMann Group Paper & Flashing Inspection",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-01 - 2026-08-01"
+        "timeline": "2026-09-08 - 2026-09-08"
       },
       {
         "name": "Confirm Exterior Cladding Selection with Client",
@@ -6550,19 +6550,19 @@
         "name": "Schedule Soffit & Gutters Installation",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-16 - 2026-08-16"
+        "timeline": "2026-08-26 - 2026-08-26"
       },
       {
         "name": "Soffit & Gutters Install",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-09-02 - 2026-09-02"
       },
       {
         "name": "Book Building Envelope Inspection",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-09-09 - 2026-09-09"
       },
       {
         "name": "Exterior Trim & Flashing Install",
@@ -6574,7 +6574,7 @@
         "name": "Schedule Main Cladding Install",
         "group": "Exterior Veneer",
         "status": "",
-        "timeline": "2026-08-02 - 2026-08-02"
+        "timeline": "2026-09-07 - 2026-09-07"
       },
       {
         "name": "Main Cladding Install",
@@ -6682,7 +6682,7 @@
         "name": "Order Cabinets",
         "group": "Cabinetry & Countertops",
         "status": "",
-        "timeline": "2026-08-03 - 2026-08-03"
+        "timeline": "2026-08-11 - 2026-08-11"
       },
       {
         "name": "Schedule Cabinet Install with Supplier",
@@ -6862,7 +6862,7 @@
         "name": "Client walk Thoguh Deficiency",
         "group": "Final",
         "status": "",
-        "timeline": "2026-12-15 - 2026-12-19"
+        "timeline": "2026-12-15 - 2026-12-18"
       }
     ]
   },
