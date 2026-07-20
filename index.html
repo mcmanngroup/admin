@@ -1440,7 +1440,7 @@ var isVendorHeader=col0s&&col0s.toLowerCase().indexOf('total')!==0&&!isBill&&(r[
     } else if(isBill){
       html+='<tr class="vendor-detail" data-group="vg'+matSecId+'" data-month="'+monthKeyOf(r[2])+'">'
         +'<td><input class="ce" value="'+fmtD(r[2])+'" style="font-family:var(--mono);font-size:12px"/></td>'
-        +'<td><input class="ce" value="'+(r[3]||'—').replace(/"/g,'&quot;')+'" style="font-family:var(--mono);font-size:11px"/></td>'
++'<td><input class="ce" value="'+String(r[3]||'—').replace(/"/g,'&quot;')+'" style="font-family:var(--mono);font-size:11px"/></td>'
         +'<td><input class="ce" value="'+(r[4]||'—').replace(/"/g,'&quot;')+'"/></td>'
         +'<td class="num"><input class="ce num" value="'+fmtM(r[5])+'"/></td>'
         +'<td><div class="ra"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>'
