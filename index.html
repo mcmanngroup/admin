@@ -553,6 +553,7 @@ tr:hover .ra{opacity:1;}
       <div class="tab" onclick="switchTab('schedule',this)">Schedule</div>
       <div class="tab" onclick="switchTab('calendar',this)">Calendar</div>
 <div class="tab" onclick="switchTab('clientinfo',this)">Client / Project Info</div>
+      <div class="tab" onclick="switchTab('uploadreport',this)">Upload Report</div>
       <div class="tab" onclick="switchTab('documents',this)">Upload Documents</div>
       <div class="tab" onclick="openClientDashboardTab()">🔗 Open Client Dashboard</div>
       
@@ -571,20 +572,8 @@ tr:hover .ra{opacity:1;}
     <button class="sync-btn" id="sync-btn" onclick="syncToGitHub()">⬆ Sync to Dashboard</button>
   </div>
   <div class="body-layout">
-    <div class="sidebar">
-      <div class="sb-top">
-        <div class="sb-lbl">Upload Monthly Report</div>
-        <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="upload-zone">
-          <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleUpload(event)"/>
-          <div class="up-icon">📂</div>
-          <div class="up-text">Drop Excel or <span>browse</span></div>
-        </div>
-      </div>
-      <div class="sb-month-lbl">Saved Reports</div>
-      <div class="month-list" id="month-list"><div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div></div>
-    </div>
     <div class="main-content" id="main-content">
-      <div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Upload an Excel file or select a saved monthly report.</div></div>
+      <div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Upload an Excel file or select a saved monthly report from the Upload Report tab.</div></div>
     </div>
   </div>
 </div>
@@ -857,6 +846,7 @@ function detectMonth(fn){
 
 function renderMonthList(){
   var list=document.getElementById('month-list');
+  if(!list)return; // Upload Report tab isn't the active tab right now — nothing to update
   var keys=Object.keys(reports).filter(function(k){return k.charAt(0)!=='_';}).sort(function(a,b){return new Date(b)-new Date(a);});
   if(!keys.length){list.innerHTML='<div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div>';return;}
   list.innerHTML=keys.map(function(k){
@@ -876,11 +866,20 @@ function renderMonthList(){
 function monthClick(e,el){if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;selectMonth(el.getAttribute('data-key'));}
 function renClick(e,el){e.stopPropagation();startRename(el.getAttribute('data-sid'),el.getAttribute('data-key'));}
 function delClick(e,el){e.stopPropagation();openDeleteModal(el.getAttribute('data-key'));}
-function selectMonth(k){activeMonth=k;renderMonthList();updateBar();renderContent();}
+function selectMonth(k){
+  activeMonth=k;
+  if(activeTab==='uploadreport'){
+    activeTab='costs';
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+    var costsTab=document.querySelector('.tab[onclick*="costs"]');
+    if(costsTab)costsTab.classList.add('active');
+  }
+  renderMonthList();updateBar();renderContent();
+}
 function openDeleteModal(k){deleteTarget=k;document.getElementById('modal-sub').textContent='Delete "'+k+'"? This cannot be undone.';document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');deleteTarget=null;}
 function confirmDelete(){if(!deleteTarget)return;delete reports[deleteTarget];save();if(activeMonth===deleteTarget){activeMonth=null;showEmpty();}showToast('Deleted',true);deleteTarget=null;closeModal();renderMonthList();}
-function showEmpty(){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Select a month from the sidebar.</div></div>';}
+function showEmpty(){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Select a month from the Upload Report tab.</div></div>';}
 
 function switchTab(tab,el){activeTab=tab;document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');renderContent();}
 function openClientDashboardTab(){
@@ -892,6 +891,7 @@ function renderContent(){
   if(activeTab==='schedule'){renderSchedule();return;}
   if(activeTab==='calendar'){renderCalendarTab();return;}
   if(activeTab==='clientinfo'){renderClientInfo();return;}
+  if(activeTab==='uploadreport'){renderUploadReport();return;}
   if(activeTab==='documents'){renderDocuments();return;}
   if(!activeMonth||!reports[activeMonth]){showEmpty();return;}
   var data=reports[activeMonth];
@@ -2592,14 +2592,32 @@ async function saveEditJob(jobId){
   showToast('Job updated ✓');
 }
 
-var zone=document.getElementById('upload-zone');
-zone.addEventListener('dragover',function(e){e.preventDefault();zone.style.borderColor='var(--blue)';zone.style.background='var(--blue-pale)';});
-zone.addEventListener('dragleave',function(){zone.style.borderColor='';zone.style.background='';});
-zone.addEventListener('drop',function(e){
-  e.preventDefault();zone.style.borderColor='';zone.style.background='';
-  var f=e.dataTransfer.files[0];
-  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('file-input').files=dt.files;handleUpload({target:{files:dt.files,value:''}});}
-});
+function renderUploadReport(){
+  var html='<div style="max-width:340px">'
+    +'<div class="section-card">'
+    +'<div class="sb-top" style="border-bottom:1px solid var(--border)">'
+    +'<div class="sb-lbl">Upload Monthly Report</div>'
+    +'<div class="upload-zone" onclick="document.getElementById(\'file-input\').click()" id="upload-zone">'
+    +'<input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleUpload(event)"/>'
+    +'<div class="up-icon">📂</div>'
+    +'<div class="up-text">Drop Excel or <span>browse</span></div>'
+    +'</div></div>'
+    +'<div class="sb-month-lbl">Saved Reports</div>'
+    +'<div class="month-list" id="month-list" style="max-height:420px"><div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div></div>'
+    +'</div></div>';
+  document.getElementById('main-content').innerHTML=html;
+  renderMonthList();
+
+  var zone=document.getElementById('upload-zone');
+  zone.addEventListener('dragover',function(e){e.preventDefault();zone.style.borderColor='var(--blue)';zone.style.background='var(--blue-pale)';});
+  zone.addEventListener('dragleave',function(){zone.style.borderColor='';zone.style.background='';});
+  zone.addEventListener('drop',function(e){
+    e.preventDefault();zone.style.borderColor='';zone.style.background='';
+    var f=e.dataTransfer.files[0];
+    if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('file-input').files=dt.files;handleUpload({target:{files:dt.files,value:''}});}
+  });
+}
+
 </script>
 
 <!-- JOB MODAL -->
