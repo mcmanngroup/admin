@@ -874,10 +874,10 @@ function renderMonthList(){
     row+='</div>';
     row+='<div style="display:flex;gap:8px;align-items:center">';
     if(isActive)row+='<span class="badge gold">Currently showing</span>';
-    row+='<div style="display:flex;gap:2px;align-items:center">';
-    if(reports[k]._sourceFile)row+='<button class="month-dl" data-key="'+k+'" onclick="dlClick(event,this)" title="Download original Excel">⬇</button>';
-    row+='<button class="month-ren" data-sid="'+sid+'" data-key="'+k+'" onclick="renClick(event,this)" title="Rename">✎</button>';
-    row+='<button class="month-del" data-key="'+k+'" onclick="delClick(event,this)" title="Delete">✕</button>';
+    row+='<div class="ra" style="opacity:1">';
+    if(reports[k]._sourceFile)row+='<button class="rb" data-key="'+k+'" onclick="dlClick(event,this)">download</button>';
+    row+='<button class="rb" data-sid="'+sid+'" data-key="'+k+'" onclick="renClick(event,this)">rename</button>';
+    row+='<button class="rb del" data-key="'+k+'" onclick="delClick(event,this)">delete</button>';
     row+='</div></div></div>';
     return row;
   }).join('');
@@ -890,12 +890,6 @@ function selectMonth(k){
   activeMonth=k;
   reports._activeMonth=k; // remembered as the default so it's still selected after logging back in
   save();
-  if(activeTab==='uploadreport'){
-    activeTab='costs';
-    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-    var costsTab=document.querySelector('.tab[onclick*="costs"]');
-    if(costsTab)costsTab.classList.add('active');
-  }
   renderMonthList();updateBar();renderContent();
 }
 async function downloadSourceExcel(k){
