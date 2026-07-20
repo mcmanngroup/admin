@@ -553,6 +553,7 @@ tr:hover .ra{opacity:1;}
       <div class="tab" onclick="switchTab('schedule',this)">Schedule</div>
       <div class="tab" onclick="switchTab('calendar',this)">Calendar</div>
 <div class="tab" onclick="switchTab('clientinfo',this)">Client / Project Info</div>
+      <div class="tab" onclick="switchTab('documents',this)">Upload Documents</div>
       <div class="tab" onclick="openClientDashboardTab()">🔗 Open Client Dashboard</div>
       
     </div>
@@ -663,9 +664,39 @@ async function ghPut(path,data,sha){
   return r.ok;
 }
 
+// Raw (non-JSON) file get/put — used for uploaded documents, which are
+// arbitrary binary files and must NOT be run through JSON.parse/stringify
+// the way ghGet/ghPut handle reports.json/config.json.
+async function ghGetMeta(path){
+  var gh=getGhCfg();
+  if(!gh.token)return null;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var r=await fetch(url,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+  if(!r.ok)return null;
+  return await r.json(); // {sha, content (base64), download_url, ...}
+}
+async function ghPutRaw(path,base64Content,sha,message){
+  var gh=getGhCfg();
+  if(!gh.token)return null;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var body={message:message||('Admin upload: '+path),content:base64Content};
+  if(sha)body.sha=sha;
+  var r=await fetch(url,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)return null;
+  return await r.json();
+}
+async function ghDeleteRaw(path,sha,message){
+  var gh=getGhCfg();
+  if(!gh.token)return false;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var r=await fetch(url,{method:'DELETE',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:message||('Admin delete: '+path),sha:sha})});
+  return r.ok;
+}
+
 var _reportSha={};
 var _jobsSha=null;
 var _cfgSha=null;
+var _docsIndexSha={};
 
 async function save(){
   if(!activeJobId)return false;
@@ -861,6 +892,7 @@ function renderContent(){
   if(activeTab==='schedule'){renderSchedule();return;}
   if(activeTab==='calendar'){renderCalendarTab();return;}
   if(activeTab==='clientinfo'){renderClientInfo();return;}
+  if(activeTab==='documents'){renderDocuments();return;}
   if(!activeMonth||!reports[activeMonth]){showEmpty();return;}
   var data=reports[activeMonth];
   if(activeTab==='costs')renderCosts(data);
@@ -1440,7 +1472,7 @@ var isVendorHeader=col0s&&col0s.toLowerCase().indexOf('total')!==0&&!isBill&&(r[
     } else if(isBill){
       html+='<tr class="vendor-detail" data-group="vg'+matSecId+'" data-month="'+monthKeyOf(r[2])+'">'
         +'<td><input class="ce" value="'+fmtD(r[2])+'" style="font-family:var(--mono);font-size:12px"/></td>'
-+'<td><input class="ce" value="'+String(r[3]||'—').replace(/"/g,'&quot;')+'" style="font-family:var(--mono);font-size:11px"/></td>'
+        +'<td><input class="ce" value="'+(r[3]||'—').replace(/"/g,'&quot;')+'" style="font-family:var(--mono);font-size:11px"/></td>'
         +'<td><input class="ce" value="'+(r[4]||'—').replace(/"/g,'&quot;')+'"/></td>'
         +'<td class="num"><input class="ce num" value="'+fmtM(r[5])+'"/></td>'
         +'<td><div class="ra"><button class="rb hide" onclick="hideRow(this)">hide</button><button class="rb del" onclick="delRow(this)">del</button></div></td>'
@@ -2064,6 +2096,120 @@ async function saveClientInfoToStorage(obj){
   if(!reports['_clientInfo'])reports['_clientInfo']={};
   reports['_clientInfo'][activeJobId||'widgeon']=obj;
   return await save();
+}
+
+// ── Project Documents tab ───────────────────────────────────────────────
+// Files are stored in the admin repo at documents/{jobId}/{timestamp}_{name}.
+// A JSON index at documents/{jobId}/index.json (safe to run through the
+// regular JSON-based ghGet/ghPut) tracks name/size/upload date/path so the
+// list can be rendered and sorted without re-listing the GitHub folder.
+function fmtBytes(n){
+  if(!n&&n!==0)return'—';
+  if(n<1024)return n+' B';
+  if(n<1024*1024)return(n/1024).toFixed(1)+' KB';
+  return(n/1024/1024).toFixed(1)+' MB';
+}
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function renderDocuments(){
+  document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">Loading documents…</div></div>';
+  if(!activeJobId){showEmpty();return;}
+  var jid=activeJobId;
+  var idxPath='documents/'+jid+'/index.json';
+  var idx=await ghGet(idxPath);
+  var items=(idx&&idx.data&&idx.data.items)?idx.data.items:[];
+  _docsIndexSha[jid]=idx?idx.sha:null;
+  items.sort(function(a,b){return new Date(b.uploadedAt)-new Date(a.uploadedAt);});
+
+  var rowsHtml=items.length?items.map(function(it,i){
+    return '<tr'+(i===0?' style="background:var(--blue-pale)"':'')+'>'
+      +'<td>'+(i===0?'<span class="badge gold" style="margin-right:8px">Latest</span>':'')+escHtml(it.name)+'</td>'
+      +'<td style="font-size:12px;color:var(--gray4)">'+escHtml(it.uploadedAt)+'</td>'
+      +'<td class="num" style="font-size:12px;color:var(--gray4)">'+fmtBytes(it.size)+'</td>'
+      +'<td><div class="ra" style="opacity:1">'
+      +'<button class="rb" onclick="downloadDocument(\''+it.path.replace(/'/g,"\\'")+'\',\''+it.name.replace(/'/g,"\\'")+'\')">download</button>'
+      +'<button class="rb del" onclick="deleteDocument(\''+it.path.replace(/'/g,"\\'")+'\')">del</button>'
+      +'</div></td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--gray4);padding:24px">No documents uploaded yet</td></tr>';
+
+  var html='<div class="section-card" style="margin-bottom:14px">'
+    +'<div class="section-head"><div><h2>Project Documents</h2><p>Upload files for the client to download — the most recent upload is shown first and highlighted</p></div></div>'
+    +'<div style="padding:18px 20px">'
+    +'<label id="doc-drop" for="doc-upload-input" style="display:block;border:2px dashed var(--border);border-radius:10px;padding:26px;text-align:center;cursor:pointer;color:var(--gray4);font-size:13px">'
+    +'<span id="doc-drop-label">📎 Drop a file here or <span style="color:var(--blue);font-weight:700">browse</span></span>'
+    +'<input id="doc-upload-input" type="file" style="display:none" onchange="uploadDocument(event)"/>'
+    +'</label>'
+    +'</div>'
+    +'<div class="table-wrap"><table id="doc-table"><thead><tr>'
+    +'<th style="text-align:left">File</th><th style="width:18%;text-align:left">Uploaded</th><th style="width:12%;text-align:right">Size</th><th style="width:16%"></th>'
+    +'</tr></thead><tbody id="doc-tbody">'+rowsHtml+'</tbody></table></div>'
+    +'</div>';
+  document.getElementById('main-content').innerHTML=html;
+}
+
+async function uploadDocument(e){
+  var file=e.target.files[0];if(!file)return;
+  if(!activeJobId){showToast('No active job selected',true);return;}
+  var lbl=document.getElementById('doc-drop-label');
+  if(lbl)lbl.textContent='Uploading '+file.name+'…';
+  var reader=new FileReader();
+  reader.onload=async function(ev){
+    try{
+      var base64=ev.target.result.split(',')[1]; // strip "data:...;base64," prefix
+      var jid=activeJobId;
+      var safeName=file.name.replace(/[^a-zA-Z0-9_.\-]/g,'_');
+      var path='documents/'+jid+'/'+Date.now()+'_'+safeName;
+      var put=await ghPutRaw(path,base64,null,'Admin upload: '+file.name);
+      if(!put){showToast('Upload failed — check GitHub token/settings',true);renderDocuments();return;}
+
+      // update index.json (JSON, so goes through the normal ghGet/ghPut pair)
+      var idxPath='documents/'+jid+'/index.json';
+      var idx=await ghGet(idxPath);
+      var items=(idx&&idx.data&&idx.data.items)?idx.data.items:[];
+      items.unshift({name:file.name,path:path,size:file.size,uploadedAt:new Date().toISOString()});
+      var ok=await ghPut(idxPath,{items:items},idx?idx.sha:null);
+      if(!ok){
+        var fresh=await ghGet(idxPath);
+        ok=await ghPut(idxPath,{items:items},fresh?fresh.sha:null);
+      }
+      showToast(ok?'Uploaded: '+file.name:'Uploaded file, but failed to update document list',!ok);
+      renderDocuments();
+    }catch(err){showToast('Error: '+err.message,true);renderDocuments();}
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+async function downloadDocument(path,name){
+  var gh=getGhCfg();
+  if(!gh.token){showToast('GitHub not configured',true);return;}
+  showToast('Preparing download…');
+  var meta=await ghGetMeta(path);
+  if(!meta||!meta.content){showToast('Could not fetch file',true);return;}
+  try{
+    var byteChars=atob(meta.content.replace(/\n/g,''));
+    var byteNums=new Array(byteChars.length);
+    for(var i=0;i<byteChars.length;i++)byteNums[i]=byteChars.charCodeAt(i);
+    var blob=new Blob([new Uint8Array(byteNums)]);
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},0);
+  }catch(err){showToast('Download failed: '+err.message,true);}
+}
+
+async function deleteDocument(path){
+  if(!activeJobId)return;
+  if(!confirm('Delete this document? This cannot be undone.'))return;
+  var jid=activeJobId;
+  var meta=await ghGetMeta(path);
+  if(meta)await ghDeleteRaw(path,meta.sha,'Admin delete document');
+  var idxPath='documents/'+jid+'/index.json';
+  var idx=await ghGet(idxPath);
+  var items=(idx&&idx.data&&idx.data.items)?idx.data.items:[];
+  items=items.filter(function(it){return it.path!==path;});
+  var ok=await ghPut(idxPath,{items:items},idx?idx.sha:null);
+  showToast(ok?'Document deleted':'Deleted file, but failed to update list',!ok);
+  renderDocuments();
 }
 
 function renderClientInfo(){
