@@ -138,6 +138,9 @@ html,body{font-family:var(--sans);background:var(--gray);color:var(--text);min-h
 .month-ren{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gray4);background:none;border:1px solid transparent;cursor:pointer;padding:2px 5px;border-radius:3px;opacity:0;}
 .month-item:hover .month-ren{opacity:1;}
 .month-ren:hover{color:var(--blue);border-color:var(--blue);background:var(--blue-pale);}
+.month-dl{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gray4);background:none;border:1px solid transparent;cursor:pointer;padding:2px 5px;border-radius:3px;opacity:0;}
+.month-item:hover .month-dl{opacity:1;}
+.month-dl:hover{color:var(--gold-dark);border-color:var(--gold);background:var(--gold-light);}
 
 /* BODY */
 .body-layout{display:flex;flex:1;min-height:calc(100vh - 115px);}
@@ -603,7 +606,7 @@ async function doLogin(){
   if(document.getElementById('pw').value===getAdminPass()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='flex';
-    showToast("Loading data...");await initJobs();await loadFromStorage();renderMonthList();if(activeMonth)updateBar();
+    showToast("Loading data...");await initJobs();await loadFromStorage();renderMonthList();if(activeMonth){updateBar();renderContent();}
   } else {
     var e=document.getElementById('login-err');e.classList.remove('show');void e.offsetWidth;e.classList.add('show');
   }
@@ -652,6 +655,25 @@ async function ghPut(path,data,sha){
   return r.ok;
 }
 
+async function ghGetMeta(path){
+  var gh=getGhCfg();
+  if(!gh.token)return null;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var r=await fetch(url,{headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+  if(!r.ok)return null;
+  return await r.json(); // {sha, content (base64), ...}
+}
+async function ghPutRaw(path,base64Content,sha,message){
+  var gh=getGhCfg();
+  if(!gh.token)return null;
+  var url='https://api.github.com/repos/'+GH_ADMIN_USER+'/'+GH_ADMIN_REPO+'/contents/'+path;
+  var body={message:message||('Admin upload: '+path),content:base64Content};
+  if(sha)body.sha=sha;
+  var r=await fetch(url,{method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)return null;
+  return await r.json();
+}
+
 var _reportSha={};
 var _jobsSha=null;
 var _cfgSha=null;
@@ -691,12 +713,24 @@ async function loadFromStorage(){
     // fallback to localStorage if no token configured yet
     try{var d=localStorage.getItem('mcmann_r8_'+jid);if(d)reports=JSON.parse(d);else reports={};}catch(e){reports={};}
     try{var m=localStorage.getItem('mcmann_m8');if(m)mondayConfig=JSON.parse(m);}catch(e){mondayConfig={};}
+    pickDefaultActiveMonth();
     return;
   }
 var rpt=await ghGet('reports/'+jid+'/reports.json');
   if(rpt){reports=rpt.data;_reportSha[jid]=rpt.sha;}else{reports={};}
   var cfg=await ghGet('data/config.json');
   if(cfg){mondayConfig=cfg.data;_cfgSha=cfg.sha;}else{mondayConfig={};}
+  pickDefaultActiveMonth();
+}
+
+// Whichever report the user last had open (reports._activeMonth) becomes the
+// default again on login. If none was ever chosen, fall back to the most
+// recently uploaded report so there's still something to look at.
+function pickDefaultActiveMonth(){
+  var keys=Object.keys(reports).filter(function(k){return k.charAt(0)!=='_';});
+  if(!keys.length){activeMonth=null;return;}
+  if(reports._activeMonth&&reports[reports._activeMonth]){activeMonth=reports._activeMonth;return;}
+  activeMonth=keys.sort(function(a,b){return new Date(b)-new Date(a);})[0];
 }
 
 // Extract background color of col A for each row in a sheet.
@@ -724,7 +758,7 @@ function extractRowColors(wb, sheetName){
 function handleUpload(e){
   var file=e.target.files[0];if(!file)return;
   var reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=async function(ev){
     try{
       var wb=XLSX.read(ev.target.result,{type:'binary',cellStyles:true});
       var data={filename:file.name,uploadedAt:new Date().toLocaleString()};
@@ -736,6 +770,18 @@ function handleUpload(e){
       // Build column schema from actual Cost Breakdown headers
       data._colSchema=buildColSchema(data['Cost Breakdown']||[]);
       var key=detectMonth(file.name);
+
+      // Store the original uploaded Excel file itself (separately from the
+      // parsed data above) so it can be downloaded again later. Kept out of
+      // reports.json to avoid bloating it — only a path reference is saved.
+      try{
+        var base64=btoa(ev.target.result);
+        var safeKey=key.replace(/[^a-zA-Z0-9]/g,'_');
+        var srcPath='documents/'+activeJobId+'/source-reports/'+safeKey+'.xlsx';
+        var put=await ghPutRaw(srcPath,base64,null,'Admin upload source: '+file.name);
+        if(put)data._sourceFile={path:srcPath,name:file.name,size:file.size};
+      }catch(srcErr){/* non-fatal — the download button just won't show for this report */}
+
 reports[key]=data;
 var _allKeys=Object.keys(reports).filter(function(k){return k.charAt(0)!=='_';}).sort(function(a,b){return new Date(b)-new Date(a);});
 _allKeys.slice(6).forEach(function(oldKey){if(reports[oldKey])delete reports[oldKey]._cbRowColors;});
@@ -820,23 +866,30 @@ function renderMonthList(){
   if(!keys.length){list.innerHTML='<div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div>';return;}
   list.innerHTML=keys.map(function(k){
     var sid=k.replace(/[^a-zA-Z0-9]/g,'_');
-    var row='<div class="month-item'+(k===activeMonth?' active':'')+'" data-key="'+k+'" onclick="monthClick(event,this)">';
+    var isActive=k===activeMonth;
+    var row='<div class="month-item'+(isActive?' active':'')+'" data-key="'+k+'" onclick="monthClick(event,this)">';
     row+='<div style="flex:1;min-width:0">';
-    row+='<div class="month-name'+(k===activeMonth?' active':'')+'" id="mn-'+sid+'">'+k+'</div>';
-    row+='<div class="month-date">'+((reports[k].uploadedAt||'').split(',')[0])+'</div>';
+    row+='<div class="month-name'+(isActive?' active':'')+'" id="mn-'+sid+'">'+k+'</div>';
+    row+='<div class="month-date">Uploaded '+((reports[k].uploadedAt||'').split(',')[0])+'</div>';
     row+='</div>';
+    row+='<div style="display:flex;gap:8px;align-items:center">';
+    if(isActive)row+='<span class="badge gold">Currently showing</span>';
     row+='<div style="display:flex;gap:2px;align-items:center">';
+    if(reports[k]._sourceFile)row+='<button class="month-dl" data-key="'+k+'" onclick="dlClick(event,this)" title="Download original Excel">⬇</button>';
     row+='<button class="month-ren" data-sid="'+sid+'" data-key="'+k+'" onclick="renClick(event,this)" title="Rename">✎</button>';
     row+='<button class="month-del" data-key="'+k+'" onclick="delClick(event,this)" title="Delete">✕</button>';
-    row+='</div></div>';
+    row+='</div></div></div>';
     return row;
   }).join('');
 }
 function monthClick(e,el){if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;selectMonth(el.getAttribute('data-key'));}
 function renClick(e,el){e.stopPropagation();startRename(el.getAttribute('data-sid'),el.getAttribute('data-key'));}
 function delClick(e,el){e.stopPropagation();openDeleteModal(el.getAttribute('data-key'));}
+function dlClick(e,el){e.stopPropagation();downloadSourceExcel(el.getAttribute('data-key'));}
 function selectMonth(k){
   activeMonth=k;
+  reports._activeMonth=k; // remembered as the default so it's still selected after logging back in
+  save();
   if(activeTab==='uploadreport'){
     activeTab='costs';
     document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
@@ -845,9 +898,24 @@ function selectMonth(k){
   }
   renderMonthList();updateBar();renderContent();
 }
+async function downloadSourceExcel(k){
+  var src=reports[k]&&reports[k]._sourceFile;
+  if(!src){showToast('Original file not available for this report',true);return;}
+  var meta=await ghGetMeta(src.path);
+  if(!meta||!meta.content){showToast('Could not fetch the original file',true);return;}
+  try{
+    var byteChars=atob(meta.content.replace(/\n/g,''));
+    var byteNums=new Array(byteChars.length);
+    for(var i=0;i<byteChars.length;i++)byteNums[i]=byteChars.charCodeAt(i);
+    var blob=new Blob([new Uint8Array(byteNums)]);
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=src.name;document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},0);
+  }catch(err){showToast('Download failed: '+err.message,true);}
+}
 function openDeleteModal(k){deleteTarget=k;document.getElementById('modal-sub').textContent='Delete "'+k+'"? This cannot be undone.';document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');deleteTarget=null;}
-function confirmDelete(){if(!deleteTarget)return;delete reports[deleteTarget];save();if(activeMonth===deleteTarget){activeMonth=null;showEmpty();}showToast('Deleted',true);deleteTarget=null;closeModal();renderMonthList();}
+function confirmDelete(){if(!deleteTarget)return;delete reports[deleteTarget];if(reports._activeMonth===deleteTarget)delete reports._activeMonth;save();if(activeMonth===deleteTarget){activeMonth=null;showEmpty();}showToast('Deleted',true);deleteTarget=null;closeModal();renderMonthList();}
 function showEmpty(){document.getElementById('main-content').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report selected</div><div class="empty-sub">Select a month from the Upload Report tab.</div></div>';}
 
 function switchTab(tab,el){activeTab=tab;document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');renderContent();}
@@ -2447,7 +2515,7 @@ async function saveEditJob(jobId){
 }
 
 function renderUploadReport(){
-  var html='<div style="max-width:340px">'
+  var html='<div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start">'
     +'<div class="section-card">'
     +'<div class="sb-top" style="border-bottom:1px solid var(--border)">'
     +'<div class="sb-lbl">Upload Monthly Report</div>'
@@ -2455,10 +2523,14 @@ function renderUploadReport(){
     +'<input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleUpload(event)"/>'
     +'<div class="up-icon">📂</div>'
     +'<div class="up-text">Drop Excel or <span>browse</span></div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--gray4);margin-top:12px;line-height:1.5">New uploads become the active report automatically — no need to select it after.</div>'
     +'</div></div>'
-    +'<div class="sb-month-lbl">Saved Reports</div>'
-    +'<div class="month-list" id="month-list" style="max-height:420px"><div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div></div>'
-    +'</div></div>';
+    +'<div class="section-card">'
+    +'<div class="sb-top" style="border-bottom:1px solid var(--border)"><div class="sb-lbl" style="margin-bottom:0">Saved Reports</div></div>'
+    +'<div class="month-list" id="month-list" style="padding:8px;max-height:none"><div class="no-months">No reports yet.<br/>Upload an Excel<br/>to get started.</div></div>'
+    +'</div>'
+    +'</div>';
   document.getElementById('main-content').innerHTML=html;
   renderMonthList();
 
@@ -2472,6 +2544,7 @@ function renderUploadReport(){
   });
 }
 </script>
+
 
 <!-- JOB MODAL -->
 <div class="jmodal-overlay" id="job-modal">
