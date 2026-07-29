@@ -30811,7 +30811,7 @@
   },
   "July 2026": {
     "filename": "McMann_July 2026.xlsx.xlsx",
-    "uploadedAt": "7/29/2026, 3:21:19 PM",
+    "uploadedAt": "7/29/2026, 3:21:30 PM",
     "Cost Breakdown": [
       [
         "",
@@ -40546,7 +40546,7 @@
         "key": "prevInv",
         "label": "Prev. Invoiced",
         "excelIndex": 2,
-        "visible": true
+        "visible": false
       },
       {
         "key": "curInv",
