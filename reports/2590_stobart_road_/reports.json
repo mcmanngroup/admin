@@ -40560,7 +40560,7 @@
         "key": "prevInv",
         "label": "Prev. Invoiced",
         "excelIndex": 2,
-        "visible": true
+        "visible": false
       },
       {
         "key": "curInv",
@@ -40593,5 +40593,6 @@
         "visible": true
       }
     ]
-  }
+  },
+  "_activeMonth": "July 2026"
 }
